@@ -9,8 +9,8 @@ import (
 
 func main() {
 	ctx := context.Background()
-	cart := app.NewApp(ctx)
-	if err := cart.Run(); err != nil {
+	// Запуск приложения.
+	if err := app.NewApp(ctx).Run(); err != nil {
 		log.Fatalf("Неудалось запустить приложение: %v", err)
 	}
 }

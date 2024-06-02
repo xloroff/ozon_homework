@@ -4,26 +4,28 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model/v1"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
 )
 
 // AddItem добавляет товар в память.
-func (ms *cartStorage) AddItem(ctx context.Context, item *v1.AddItem) error {
-	logger.Info(ctx, fmt.Sprintf("repositoryMemory.AddItem: начинаю добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
-	defer logger.Info(ctx, fmt.Sprintf("repositoryMemory.AddItem: закончил добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
+func (ms *cartStorage) AddItem(ctx context.Context, item *model.AddItem) error {
+	ms.logger.Info(ctx, fmt.Sprintf("repositoryMemory.AddItem: начинаю добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
+	defer ms.logger.Info(ctx, fmt.Sprintf("repositoryMemory.AddItem: закончил добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
+
+	ms.Lock()
+	defer ms.Unlock()
 
 	cart, ok := ms.data[item.UserID]
 	if !ok {
-		cart = &v1.Cart{
-			Items: v1.CartItems{},
+		cart = &model.Cart{
+			Items: model.CartItems{},
 		}
 		ms.data[item.UserID] = cart
 	}
 
 	cartItem, ok := cart.Items[item.SkuID]
 	if !ok {
-		cartItem = &v1.CartItem{}
+		cartItem = &model.CartItem{}
 		cart.Items[item.SkuID] = cartItem
 	}
 

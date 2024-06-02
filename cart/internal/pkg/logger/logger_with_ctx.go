@@ -6,8 +6,10 @@ import (
 	"go.uber.org/zap"
 )
 
-// contextLoggingKey название ключа контекста в котором будут хранится дополнительные параметры для zap.
-const contextLoggingKey = "zap_with_ctx"
+// contextLoggingKey название ключа контекста в котором будут храниться дополнительные параметры для zap.
+type key string
+
+const contextLoggingKey key = "zap_with_ctx"
 
 // Set записывает поля в контекст по ключу contextLoggingKey.
 func Set(ctx context.Context, fields []zap.Field) context.Context {
@@ -28,10 +30,12 @@ func getAllLoggerFields(ctx context.Context) []zap.Field {
 	if loggerFields, ok := ctx.Value(contextLoggingKey).([]zap.Field); ok {
 		return loggerFields
 	}
+
 	return nil
 }
 
 // getLoggerField получение определенного параметра из контекста по ключу.
+/* TODO на потом
 func getLoggerField(ctx context.Context, key string) (field zap.Field) {
 	if loggerFields, ok := ctx.Value(contextLoggingKey).([]zap.Field); ok {
 		for _, field := range loggerFields {
@@ -40,5 +44,7 @@ func getLoggerField(ctx context.Context, key string) (field zap.Field) {
 			}
 		}
 	}
-	return
+
+	return field
 }
+*/

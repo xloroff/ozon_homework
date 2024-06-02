@@ -3,9 +3,11 @@ WORKDIR /cart
 ARG GOAPP_TOPORT
 COPY ./cart .
 RUN go mod download
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+RUN go install github.com/gojuno/minimock/v3/cmd/minimock@latest
 RUN go install github.com/cespare/reflex@latest
 EXPOSE ${GOAPP_TOPORT?goapp_toport_notset}
-CMD reflex -r '(\.go$|go\.mod)' go run cmd/main.go  --start-service
+CMD reflex -r '(\.go$|go\.mod)' make run-all --start-service
 
 FROM golang:1.22 AS builder
 ENV GOOS=linux
