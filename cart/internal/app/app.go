@@ -7,9 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/config"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/server"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/config"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/product_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/server"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/repository/memory_store"
 )
 
 // Application запуск приложения.
@@ -41,16 +44,27 @@ func (a *app) Run() error {
 	// Стартуем получение конфига
 	cnfg, err := config.LoadAPIConfig()
 	if err != nil {
-		panic(fmt.Errorf("Ошибка получения параметров из конфигурационного файла - %w", err))
+		return fmt.Errorf("Ошибка получения параметров из конфигурационного файла - %w", err)
 	}
 
 	// Стартуем логгер
 	l := logger.InitializeLogger(cnfg.LogLevel, cnfg.LogType)
 
-	// Стартуем веб-сервер.
-	err = server.NewServer(a.ctx, l, cnfg).Start()
+	// Старт клиентов
+	productCli := productcli.NewProductClient(l, cnfg.ProductServiceSettings)
+	memStore := memorystore.NewCartStorage(l)
+
+	lomsDialler, err := lomscli.ClientDialler(a.ctx, l, cnfg.LomsServiceSettings)
 	if err != nil {
-		l.Fatalf(a.ctx, "Ошибка запуска сервера - %v", err.Error())
+		return fmt.Errorf("Ошибка создания диаллера для сервиса заказов - %w", err)
+	}
+
+	lomsCli := lomscli.NewClient(a.ctx, l, lomsDialler)
+
+	// Стартуем веб-сервер.
+	err = server.NewServer(a.ctx, l, cnfg, productCli, lomsCli, memStore).Start()
+	if err != nil {
+		return fmt.Errorf("Ошибка запуска сервера - %w", err)
 	}
 
 	// Обработка сигналов завершения.

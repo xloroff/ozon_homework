@@ -8,8 +8,8 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/service/cart/mock"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/service/cart/mock"
 )
 
 func TestDelCartTable(t *testing.T) {
@@ -25,6 +25,13 @@ func TestDelCartTable(t *testing.T) {
 		wantErr error
 	}
 
+	type fields struct {
+		productCliMock *mock.ProductClientMock
+		storageMock    *mock.StorageMock
+		lomsCliMock    *mock.LomsClientMock
+		loggerMock     logger.ILog
+	}
+
 	testData := []data{
 		{
 			name:    "Слой сервиса: Корзина не существует",
@@ -38,14 +45,19 @@ func TestDelCartTable(t *testing.T) {
 	}
 
 	ctrl := minimock.NewController(t)
-	productCliMock := mock.NewProductClientMock(ctrl)
-	storageMock := mock.NewStorageMock(ctrl)
-	l := logger.InitializeLogger("", 1)
-	servM := NewService(l, productCliMock, storageMock)
+
+	fieldsForTableTest := fields{
+		productCliMock: mock.NewProductClientMock(ctrl),
+		storageMock:    mock.NewStorageMock(ctrl),
+		loggerMock:     logger.InitializeLogger("", 1),
+		lomsCliMock:    mock.NewLomsClientMock(ctrl),
+	}
+
+	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
 
 	for _, tt := range testData {
 		t.Run(tt.name, func(t *testing.T) {
-			storageMock.DelCartMock.
+			fieldsForTableTest.storageMock.DelCartMock.
 				When(ctx, tt.userID).
 				Then(tt.wantErr)
 

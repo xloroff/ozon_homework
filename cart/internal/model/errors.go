@@ -11,4 +11,6 @@ var (
 	ErrTooManyRequests = errors.New("Cлишком много запросов")
 	// ErrUnknownError неизвестная ошибка.
 	ErrUnknownError = errors.New("Неизвестная ошибка")
+	// ErrDontHaveReserveCount недостаточно товара в остатках.
+	ErrDontHaveReserveCount = errors.New("Недостаточно товара в остатках")
 )

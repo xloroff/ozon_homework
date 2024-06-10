@@ -1,0 +1,88 @@
+services:
+# Cервис для работы с корзиной пользователя Cart
+  cart:
+    container_name: appcart-${STAGE}
+    image: appcart-${STAGE}
+    platform: linux/amd64
+    build:
+      context: .
+      target: ${STAGE}
+      args:
+        CARTAPP_TOPORT: ${CARTAPP_TOPORT}
+      dockerfile: cart/Dockerfile
+    environment:
+      - APP_CONFIG_NAME
+    depends_on:
+      loms:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:${CARTAPP_TOPORT}/healthcheck || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+    ports:
+      - ${CARTAPP_TOPORT}:${CARTAPP_TOPORT}
+    restart: always
+    networks:
+      - loms
+
+  # Cервис для работы с учетом заказов Loms
+  loms:
+    container_name: apploms-${STAGE}
+    image: apploms-${STAGE}
+    platform: linux/amd64
+    build:
+      context: .
+      target: ${STAGE}
+      args:
+        LOMSAPP_TOPORT: ${LOMSAPP_TOPORT}
+        LOMSHTTP_TOPORT: ${LOMSHTTP_TOPORT}
+      dockerfile: loms/Dockerfile
+    environment:
+      - APP_CONFIG_NAME
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider http://localhost:${LOMSHTTP_TOPORT}/healthcheck || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 1m
+    ports:
+      - ${LOMSAPP_FROMPORT}:${LOMSAPP_TOPORT}
+      - ${LOMSHTTP_TOPORT}:${LOMSHTTP_TOPORT}
+    restart: always
+    networks:
+      - loms
+
+  # Cервис для запуска e2e тестов
+  e2e:
+    container_name: appe2e-${STAGE}
+    image: appe2e-${STAGE}
+    platform: linux/amd64
+    command: tail -f /dev/null
+    build:
+      context: .
+      target: ${STAGE}
+      dockerfile: e2e/Dockerfile
+    profiles:
+      - donotstart
+    environment:
+      - CARTAPP_TOPORT
+      - CART_APP_NAME
+    depends_on:
+      cart:
+        condition: service_healthy
+    networks:
+      - loms
+
+networks:
+  loms:
+    driver: bridge

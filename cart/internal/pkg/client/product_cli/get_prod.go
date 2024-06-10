@@ -9,8 +9,8 @@ import (
 	"github.com/gookit/validate"
 	"go.uber.org/zap"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
 )
 
 func (c *client) GetProduct(ctx context.Context, skuID int64) (*model.ProductResp, error) {
@@ -51,9 +51,7 @@ func (c *client) GetProduct(ctx context.Context, skuID int64) (*model.ProductRes
 		ForceContentType("application/json").
 		Post(urlapi)
 	if err != nil {
-		c.logger.Errorf(ctx, "ClientProductServiceResty.ProductReciver: ошибка отправки запроса в сервис продуктов - %v", err)
-
-		return nil, fmt.Errorf("Ошибка отправки запроса в сервис продуктов - %w", err)
+		return nil, fmt.Errorf("ClientProductServiceResty.ProductReciver:  Ошибка отправки запроса в сервис продуктов - %w", err)
 	}
 
 	err = c.responseChecker(ctx, resp)
@@ -65,9 +63,8 @@ func (c *client) GetProduct(ctx context.Context, skuID int64) (*model.ProductRes
 	v := validate.Struct(resp)
 	if !v.Validate() {
 		err = v.Errors
-		c.logger.Errorf(ctx, "ClientProductServiceResty.responseChecker: валидация данных в ответе от сервиса продуктов непройдена - %v", err)
 
-		return nil, fmt.Errorf("Валидация данных в ответе от сервиса продуктов непройдена - %w", err)
+		return nil, fmt.Errorf("ClientProductServiceResty.responseChecker: Валидация данных в ответе от сервиса продуктов непройдена - %w", err)
 	}
 
 	ctx = logger.Set(ctx, []zap.Field{zap.Any("response", result)})

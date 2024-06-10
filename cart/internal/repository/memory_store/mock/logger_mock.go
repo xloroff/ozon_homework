@@ -2,7 +2,7 @@
 
 package mock
 
-//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger.ILog -o logger_mock.go -n LoggerMock -p mock
+//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger.ILog -o logger_mock.go -n LoggerMock -p mock
 
 import (
 	"context"

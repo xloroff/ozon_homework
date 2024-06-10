@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package gitlab.ozon.dev.xloroff.ozon_hw.loms.pkg.api.stock.v1;
+
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/api/stock/v1;stock";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "API остатков по товарам";
+    description: "Сервис отвечает за учет остатков по товарам.";
+    version: "1.0.0";
+  };
+  schemes: HTTP;
+  schemes: HTTPS;
+  consumes: "application/json";
+  produces: "application/json";
+};
+
+service StockAPI {
+  rpc Info (StockInfoRequest) returns (StockInfoResponse) {
+    option (google.api.http) = {
+      get: "/v1/stock/info/{sku}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Остатки товаров"
+      description: "Возвращает количество товаров, которые можно купить. Если товар был зарезервирован у кого-то в заказе и ждет оплаты, его купить нельзя."
+      operation_id: "StocksInfo"
+    };
+  }
+}
+
+message StockInfoRequest {
+  int64 sku = 1 [json_name = "sku", (validate.rules).int64.gte = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "2958025", description: "Идентификатор товара.", field_configuration: {path_param_name: "sku"}}];
+}
+
+message StockInfoResponse {
+  uint64 count = 1 [json_name = "count", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "1", description: "Количество единиц товара."
+  }];
+}

@@ -9,8 +9,11 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/config"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/config"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/product_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/repository/memory_store"
 )
 
 const // Максимальное время ожидания нового соединения.
@@ -31,7 +34,7 @@ type server struct {
 }
 
 // NewServer создает экземпляр http сервера с таймингами работы прикладов.
-func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParameters) AppServer {
+func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParameters, productCli productcli.Client, lomsCli lomscli.LomsService, memStore memorystore.Storage) AppServer {
 	l.Warn(ctx, "Запуск сервера...")
 
 	// Создаем новый роутер.
@@ -53,7 +56,7 @@ func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParam
 	}
 
 	// Добавляем точки API и мидлвари.
-	err := s.AddHandl()
+	err := s.AddHandl(productCli, lomsCli, memStore)
 	if err != nil {
 		err = s.Stop()
 		if err != nil {

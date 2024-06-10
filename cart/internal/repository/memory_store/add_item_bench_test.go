@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
 )
 
 func BenchmarkAddItemOneToOne(b *testing.B) {

@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package gitlab.ozon.dev.xloroff.ozon_hw.loms.pkg.api.order.v1;
+
+import "google/protobuf/empty.proto";
+import "validate/validate.proto";
+import "google/api/annotations.proto";
+import "protoc-gen-openapiv2/options/annotations.proto";
+
+option go_package = "gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/api/order/v1;order";
+
+option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_swagger) = {
+  info: {
+    title: "API учета заказов";
+    description: "Сервис отвечает за учет заказов и стоки по товарам."
+    version: "1.0.0";
+  };
+  schemes: HTTP;
+  schemes: HTTPS;
+  consumes: "application/json";
+  produces: "application/json";
+};
+
+service OrderAPI {
+  rpc Create (OrderCreateRequest) returns (OrderCreateResponse) {
+    option (google.api.http) = {
+      post: "/v1/order/create"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Создание заказа"
+      description: "Создает новый заказ для пользователя из списка переданных товаров с резервированием нужного количества стоков."
+      operation_id: "OrderCreate"
+    };
+  }
+
+  rpc Info (OrderInfoRequest) returns (OrderInfoResponse) {
+    option (google.api.http) = {
+      get: "/v1/order/info/{order_id}"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Информация о заказе"
+      description: "Показывает информацию по заказу."
+      operation_id: "OrderInfo"
+    };
+  }
+
+  rpc Pay (OrderPayRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/order/pay"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Оплата заказа"
+      description: "Помечает заказ оплаченным. Зарезервированные товары должны перейти в статус купленных."
+      operation_id: "OrderPay"
+    };
+  }
+
+  rpc Cancel (OrderCancelRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/order/cancel"
+      body: "*"
+    };
+    option (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_operation) = {
+      summary: "Отмена заказа"
+      description: "Отменяет заказ, снимает резерв со всех товаров в заказе.."
+      operation_id: "OrderCancel"
+    };
+  }
+}
+
+message Order{
+  int64 id = 1 [json_name = "id", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Идентификатор заказа."
+  }];
+  string status = 2 [json_name = "status", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Статус заказа: new | awaiting payment | failed | payed | cancelled."
+  }];
+  int64 user = 3 [json_name = "user", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    description: "Идентификатор пользователя которому принадлежит заказ."
+  }];
+  repeated OrderItem items = 4 [json_name = "items"];
+}
+
+message OrderItem{
+  int64 sku = 1 [json_name = "sku", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "2958025", description: "Идентификатор товара."
+  }];
+  uint64 count = 2 [json_name = "count", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "1", description: "Количество единиц товара."
+  }];
+}
+
+message OrderCreateRequest {
+  message Item{
+    int64 sku = 1 [json_name = "sku", (validate.rules).int64.gt = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      example: "2958025", description: "Идентификатор товара."
+    }];
+    uint64 count = 2 [json_name = "count", (validate.rules).uint64.gt = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+      example: "1", description: "Количество единиц товара."
+    }];
+  }
+
+  int64 user = 1 [json_name = "user", (validate.rules).int64.gt = 0];
+  repeated Item items = 2 [json_name = "items", (validate.rules).repeated = {min_items:1}];
+}
+
+message OrderCreateResponse{
+  int64 order_id = 1 [json_name = "order_id", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "5", description: "Идентификатор заказа."
+  }];
+}
+
+message OrderInfoRequest {
+  int64 order_id = 1 [json_name = "order_id", (validate.rules).int64.gt = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {example: "5", description: "Идентификатор заказа.", field_configuration: {path_param_name: "order_id"}}];
+}
+
+message OrderInfoResponse {
+  Order order = 1 [json_name = "order", (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "5", description: "Идентификатор заказа."
+  }];
+}
+
+message OrderPayRequest{
+  int64 order_id = 1 [json_name = "order_id", (validate.rules).int64.gt = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "5", description: "Идентификатор заказа."
+  }];
+}
+
+message OrderCancelRequest{
+  int64 order_id = 1 [json_name = "order_id", (validate.rules).int64.gt = 0, (grpc.gateway.protoc_gen_openapiv2.options.openapiv2_field) = {
+    example: "5", description: "Идентификатор заказа."
+  }];
+}

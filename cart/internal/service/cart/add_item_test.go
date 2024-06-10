@@ -8,9 +8,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/service/cart/mock"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/service/cart/mock"
 )
 
 func TestAddItemTable(t *testing.T) {
@@ -21,6 +21,7 @@ func TestAddItemTable(t *testing.T) {
 	type fields struct {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
+		lomsCliMock    *mock.LomsClientMock
 		loggerMock     logger.ILog
 	}
 
@@ -57,6 +58,7 @@ func TestAddItemTable(t *testing.T) {
 					Price: 250,
 				}, nil)
 				f.storageMock.AddItemMock.Return(err1)
+				f.lomsCliMock.StockInfoMock.Return(500, nil)
 			},
 			wantErr: err1,
 		},
@@ -71,8 +73,24 @@ func TestAddItemTable(t *testing.T) {
 					Price: 500,
 				}, nil)
 				f.storageMock.AddItemMock.Return(nil)
+				f.lomsCliMock.StockInfoMock.Return(500, nil)
 			},
 			wantErr: nil,
+		},
+		{
+			name:   "Слой сервиса: Продукт не добавлен (недостаточно остатков)",
+			userID: 4,
+			skuID:  300,
+			count:  100,
+			prepare: func(f *fields) {
+				f.productCliMock.GetProductMock.Expect(ctx, 300).Return(&model.ProductResp{
+					Name:  "Тестовый товар 3",
+					Price: 500,
+				}, nil)
+				f.storageMock.AddItemMock.Return(nil)
+				f.lomsCliMock.StockInfoMock.Return(10, nil)
+			},
+			wantErr: model.ErrDontHaveReserveCount,
 		},
 	}
 
@@ -82,9 +100,10 @@ func TestAddItemTable(t *testing.T) {
 		productCliMock: mock.NewProductClientMock(ctrl),
 		storageMock:    mock.NewStorageMock(ctrl),
 		loggerMock:     logger.InitializeLogger("", 1),
+		lomsCliMock:    mock.NewLomsClientMock(ctrl),
 	}
 
-	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.storageMock)
+	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
 
 	for _, tt := range testData {
 		t.Run(tt.name, func(t *testing.T) {

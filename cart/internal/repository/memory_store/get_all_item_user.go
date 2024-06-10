@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // GetAllUserItems получает все данные по пользователю.
@@ -12,8 +12,8 @@ func (ms *cartStorage) GetAllUserItems(ctx context.Context, userID int64) (*mode
 	ms.logger.Info(ctx, fmt.Sprintf("repositoryMemory.GetAllUserItems: начинаю получение корзины пользователя userId - %d", userID))
 	defer ms.logger.Info(ctx, fmt.Sprintf("repositoryMemory.GetAllUserItems: закончил получение корзины пользователя userI - %d", userID))
 
-	ms.Lock()
-	defer ms.Unlock()
+	ms.RLock()
+	defer ms.RUnlock()
 
 	cart, ok := ms.data[userID]
 	if !ok {

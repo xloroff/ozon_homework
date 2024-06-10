@@ -1,5 +1,6 @@
 /bin
 /vendor
+/vendor-proto/
 /vendor.pb
 /vendor.protogen
 .DS_STORE
@@ -7,10 +8,14 @@
 /.idea
 /.vscode
 *cover.html
+*cover-cart.html
+*cover-loms.html
 *cover.out
 /cover.svg
 /cart/vendor.protogen/
-/loms/pgdata
+/loms/vendor.protogen/
 bin/
 log/app.log
 !/log
+/loms/vendor-proto/
+/cart/vendor-proto/

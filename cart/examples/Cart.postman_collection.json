@@ -43,6 +43,36 @@
 							"response": []
 						},
 						{
+							"name": "Создание заказа",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"count\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{proto}}://{{host}}:{{port}}/user/1/checkout",
+									"protocol": "{{proto}}",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"user",
+										"1",
+										"checkout"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Увеличить число товаров (пользователь 1)",
 							"request": {
 								"method": "POST",
@@ -230,6 +260,36 @@
 										"256",
 										"cart",
 										"2958025"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Создание заказа",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"count\": 1\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{proto}}://{{host}}:{{port}}/user/256/checkout",
+									"protocol": "{{proto}}",
+									"host": [
+										"{{host}}"
+									],
+									"port": "{{port}}",
+									"path": [
+										"user",
+										"256",
+										"checkout"
 									]
 								}
 							},

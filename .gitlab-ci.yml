@@ -1,0 +1,86 @@
+stages:
+  - coverage
+  - unittest
+  - build
+  - test
+
+linter:
+  stage: .pre
+  image: golangci/golangci-lint:v1.59.1
+  script:
+    - make lint -C cart
+    - make lint -C loms
+
+cover_cart:
+  stage: coverage
+  image: golang:1.22.3
+  script:
+    - cd ./cart
+    - go test -vet=off ./... -coverprofile ../cover/cover_cart.out.tmp > /dev/null
+    - grep -vE "_mock.go" ../cover/cover_cart.out.tmp |  grep -vE ".pb." |  grep -vE ".proto" > ../cover/cover_cart.out
+    - rm -f ../cover/cover_cart.out.tm
+    - go get github.com/boumenot/gocover-cobertura
+    - go run github.com/boumenot/gocover-cobertura < ../cover/cover_cart.out > ../cover/cover_cart.xml
+    - go tool cover -func ../cover/cover_cart.out
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: ../cover/cover_cart.xml
+  coverage: '/\s+\(statements\)\s+\d+.\d+%/'
+
+unittest_cart:
+  stage: unittest
+  image: golang:1.22.3
+  script:
+    - cd ./cart
+    - make test
+
+unittest_loms:
+  stage: unittest
+  image: golang:1.22.3
+  script:
+    - cd ./loms
+    - make test
+
+cover_loms:
+  stage: coverage
+  image: golang:1.22.3
+  script:
+    - cd ./loms
+    - go test -vet=off ./... -coverprofile ../cover/cover_loms.out.tmp > /dev/null
+    - grep -vE "_mock.go" ../cover/cover_loms.out.tmp |  grep -vE ".pb." |  grep -vE ".proto" > ../cover/cover_loms.out
+    - rm -f ../cover/cover_loms.out.tmp
+    - go get github.com/boumenot/gocover-cobertura
+    - go run github.com/boumenot/gocover-cobertura < ../cover/cover_loms.out > ../cover/cover_loms.xml
+    - go tool cover -func ../cover/cover_loms.out
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: ../cover/cover_loms.xml
+  coverage: '/\s+\(statements\)\s+\d+.\d+%/'
+
+build_image_cart:
+  stage: build
+  script:
+    - docker build -f ./cart/Dockerfile --target production 
+      --build-arg CARTAPP_TOPORT=8082
+      -t cart:production_$(echo "$CI_COMMIT_BRANCH" | awk -F'/' '{print $2}') .
+
+build_image_loms:
+  stage: build
+  script:
+    - docker build -f ./loms/Dockerfile --target production
+      --build-arg LOMSAPP_TOPORT=8083
+      --build-arg LOMSAPP_FROMPORT=8083
+      --build-arg LOMSHTTP_TOPORT=8084
+      -t loms:production_$(echo "$CI_COMMIT_BRANCH" | awk -F'/' '{print $2}') .
+
+etoetest:
+  stage: test
+  image: golang:1.22.3-bookworm
+  script:
+    - apt update
+    - apt install -y docker-compose
+    - make e2e-test

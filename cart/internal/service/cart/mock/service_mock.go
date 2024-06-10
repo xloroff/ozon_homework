@@ -2,7 +2,7 @@
 
 package mock
 
-//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/internal/service/cart.Service -o service_mock.go -n ServiceMock -p mock
+//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/service/cart.Service -o service_mock.go -n ServiceMock -p mock
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	mm_time "time"
 
 	"github.com/gojuno/minimock/v3"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // ServiceMock implements cart.Service
@@ -24,6 +24,12 @@ type ServiceMock struct {
 	afterAddItemCounter  uint64
 	beforeAddItemCounter uint64
 	AddItemMock          mServiceMockAddItem
+
+	funcCheckout          func(ctx context.Context, userID int64) (op1 *model.OrderCart, err error)
+	inspectFuncCheckout   func(ctx context.Context, userID int64)
+	afterCheckoutCounter  uint64
+	beforeCheckoutCounter uint64
+	CheckoutMock          mServiceMockCheckout
 
 	funcDelCart          func(ctx context.Context, userID int64) (err error)
 	inspectFuncDelCart   func(ctx context.Context, userID int64)
@@ -54,6 +60,9 @@ func NewServiceMock(t minimock.Tester) *ServiceMock {
 
 	m.AddItemMock = mServiceMockAddItem{mock: m}
 	m.AddItemMock.callArgs = []*ServiceMockAddItemParams{}
+
+	m.CheckoutMock = mServiceMockCheckout{mock: m}
+	m.CheckoutMock.callArgs = []*ServiceMockCheckoutParams{}
 
 	m.DelCartMock = mServiceMockDelCart{mock: m}
 	m.DelCartMock.callArgs = []*ServiceMockDelCartParams{}
@@ -386,6 +395,327 @@ func (m *ServiceMock) MinimockAddItemInspect() {
 	if !m.AddItemMock.invocationsDone() && afterAddItemCounter > 0 {
 		m.t.Errorf("Expected %d calls to ServiceMock.AddItem but found %d calls",
 			mm_atomic.LoadUint64(&m.AddItemMock.expectedInvocations), afterAddItemCounter)
+	}
+}
+
+type mServiceMockCheckout struct {
+	optional           bool
+	mock               *ServiceMock
+	defaultExpectation *ServiceMockCheckoutExpectation
+	expectations       []*ServiceMockCheckoutExpectation
+
+	callArgs []*ServiceMockCheckoutParams
+	mutex    sync.RWMutex
+
+	expectedInvocations uint64
+}
+
+// ServiceMockCheckoutExpectation specifies expectation struct of the Service.Checkout
+type ServiceMockCheckoutExpectation struct {
+	mock      *ServiceMock
+	params    *ServiceMockCheckoutParams
+	paramPtrs *ServiceMockCheckoutParamPtrs
+	results   *ServiceMockCheckoutResults
+	Counter   uint64
+}
+
+// ServiceMockCheckoutParams contains parameters of the Service.Checkout
+type ServiceMockCheckoutParams struct {
+	ctx    context.Context
+	userID int64
+}
+
+// ServiceMockCheckoutParamPtrs contains pointers to parameters of the Service.Checkout
+type ServiceMockCheckoutParamPtrs struct {
+	ctx    *context.Context
+	userID *int64
+}
+
+// ServiceMockCheckoutResults contains results of the Service.Checkout
+type ServiceMockCheckoutResults struct {
+	op1 *model.OrderCart
+	err error
+}
+
+// Marks this method to be optional. The default behavior of any method with Return() is '1 or more', meaning
+// the test will fail minimock's automatic final call check if the mocked method was not called at least once.
+// Optional() makes method check to work in '0 or more' mode.
+// It is NOT RECOMMENDED to use this option by default unless you really need it, as it helps to
+// catch the problems when the expected method call is totally skipped during test run.
+func (mmCheckout *mServiceMockCheckout) Optional() *mServiceMockCheckout {
+	mmCheckout.optional = true
+	return mmCheckout
+}
+
+// Expect sets up expected params for Service.Checkout
+func (mmCheckout *mServiceMockCheckout) Expect(ctx context.Context, userID int64) *mServiceMockCheckout {
+	if mmCheckout.mock.funcCheckout != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Set")
+	}
+
+	if mmCheckout.defaultExpectation == nil {
+		mmCheckout.defaultExpectation = &ServiceMockCheckoutExpectation{}
+	}
+
+	if mmCheckout.defaultExpectation.paramPtrs != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by ExpectParams functions")
+	}
+
+	mmCheckout.defaultExpectation.params = &ServiceMockCheckoutParams{ctx, userID}
+	for _, e := range mmCheckout.expectations {
+		if minimock.Equal(e.params, mmCheckout.defaultExpectation.params) {
+			mmCheckout.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmCheckout.defaultExpectation.params)
+		}
+	}
+
+	return mmCheckout
+}
+
+// ExpectCtxParam1 sets up expected param ctx for Service.Checkout
+func (mmCheckout *mServiceMockCheckout) ExpectCtxParam1(ctx context.Context) *mServiceMockCheckout {
+	if mmCheckout.mock.funcCheckout != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Set")
+	}
+
+	if mmCheckout.defaultExpectation == nil {
+		mmCheckout.defaultExpectation = &ServiceMockCheckoutExpectation{}
+	}
+
+	if mmCheckout.defaultExpectation.params != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Expect")
+	}
+
+	if mmCheckout.defaultExpectation.paramPtrs == nil {
+		mmCheckout.defaultExpectation.paramPtrs = &ServiceMockCheckoutParamPtrs{}
+	}
+	mmCheckout.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmCheckout
+}
+
+// ExpectUserIDParam2 sets up expected param userID for Service.Checkout
+func (mmCheckout *mServiceMockCheckout) ExpectUserIDParam2(userID int64) *mServiceMockCheckout {
+	if mmCheckout.mock.funcCheckout != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Set")
+	}
+
+	if mmCheckout.defaultExpectation == nil {
+		mmCheckout.defaultExpectation = &ServiceMockCheckoutExpectation{}
+	}
+
+	if mmCheckout.defaultExpectation.params != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Expect")
+	}
+
+	if mmCheckout.defaultExpectation.paramPtrs == nil {
+		mmCheckout.defaultExpectation.paramPtrs = &ServiceMockCheckoutParamPtrs{}
+	}
+	mmCheckout.defaultExpectation.paramPtrs.userID = &userID
+
+	return mmCheckout
+}
+
+// Inspect accepts an inspector function that has same arguments as the Service.Checkout
+func (mmCheckout *mServiceMockCheckout) Inspect(f func(ctx context.Context, userID int64)) *mServiceMockCheckout {
+	if mmCheckout.mock.inspectFuncCheckout != nil {
+		mmCheckout.mock.t.Fatalf("Inspect function is already set for ServiceMock.Checkout")
+	}
+
+	mmCheckout.mock.inspectFuncCheckout = f
+
+	return mmCheckout
+}
+
+// Return sets up results that will be returned by Service.Checkout
+func (mmCheckout *mServiceMockCheckout) Return(op1 *model.OrderCart, err error) *ServiceMock {
+	if mmCheckout.mock.funcCheckout != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Set")
+	}
+
+	if mmCheckout.defaultExpectation == nil {
+		mmCheckout.defaultExpectation = &ServiceMockCheckoutExpectation{mock: mmCheckout.mock}
+	}
+	mmCheckout.defaultExpectation.results = &ServiceMockCheckoutResults{op1, err}
+	return mmCheckout.mock
+}
+
+// Set uses given function f to mock the Service.Checkout method
+func (mmCheckout *mServiceMockCheckout) Set(f func(ctx context.Context, userID int64) (op1 *model.OrderCart, err error)) *ServiceMock {
+	if mmCheckout.defaultExpectation != nil {
+		mmCheckout.mock.t.Fatalf("Default expectation is already set for the Service.Checkout method")
+	}
+
+	if len(mmCheckout.expectations) > 0 {
+		mmCheckout.mock.t.Fatalf("Some expectations are already set for the Service.Checkout method")
+	}
+
+	mmCheckout.mock.funcCheckout = f
+	return mmCheckout.mock
+}
+
+// When sets expectation for the Service.Checkout which will trigger the result defined by the following
+// Then helper
+func (mmCheckout *mServiceMockCheckout) When(ctx context.Context, userID int64) *ServiceMockCheckoutExpectation {
+	if mmCheckout.mock.funcCheckout != nil {
+		mmCheckout.mock.t.Fatalf("ServiceMock.Checkout mock is already set by Set")
+	}
+
+	expectation := &ServiceMockCheckoutExpectation{
+		mock:   mmCheckout.mock,
+		params: &ServiceMockCheckoutParams{ctx, userID},
+	}
+	mmCheckout.expectations = append(mmCheckout.expectations, expectation)
+	return expectation
+}
+
+// Then sets up Service.Checkout return parameters for the expectation previously defined by the When method
+func (e *ServiceMockCheckoutExpectation) Then(op1 *model.OrderCart, err error) *ServiceMock {
+	e.results = &ServiceMockCheckoutResults{op1, err}
+	return e.mock
+}
+
+// Times sets number of times Service.Checkout should be invoked
+func (mmCheckout *mServiceMockCheckout) Times(n uint64) *mServiceMockCheckout {
+	if n == 0 {
+		mmCheckout.mock.t.Fatalf("Times of ServiceMock.Checkout mock can not be zero")
+	}
+	mm_atomic.StoreUint64(&mmCheckout.expectedInvocations, n)
+	return mmCheckout
+}
+
+func (mmCheckout *mServiceMockCheckout) invocationsDone() bool {
+	if len(mmCheckout.expectations) == 0 && mmCheckout.defaultExpectation == nil && mmCheckout.mock.funcCheckout == nil {
+		return true
+	}
+
+	totalInvocations := mm_atomic.LoadUint64(&mmCheckout.mock.afterCheckoutCounter)
+	expectedInvocations := mm_atomic.LoadUint64(&mmCheckout.expectedInvocations)
+
+	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
+}
+
+// Checkout implements cart.Service
+func (mmCheckout *ServiceMock) Checkout(ctx context.Context, userID int64) (op1 *model.OrderCart, err error) {
+	mm_atomic.AddUint64(&mmCheckout.beforeCheckoutCounter, 1)
+	defer mm_atomic.AddUint64(&mmCheckout.afterCheckoutCounter, 1)
+
+	if mmCheckout.inspectFuncCheckout != nil {
+		mmCheckout.inspectFuncCheckout(ctx, userID)
+	}
+
+	mm_params := ServiceMockCheckoutParams{ctx, userID}
+
+	// Record call args
+	mmCheckout.CheckoutMock.mutex.Lock()
+	mmCheckout.CheckoutMock.callArgs = append(mmCheckout.CheckoutMock.callArgs, &mm_params)
+	mmCheckout.CheckoutMock.mutex.Unlock()
+
+	for _, e := range mmCheckout.CheckoutMock.expectations {
+		if minimock.Equal(*e.params, mm_params) {
+			mm_atomic.AddUint64(&e.Counter, 1)
+			return e.results.op1, e.results.err
+		}
+	}
+
+	if mmCheckout.CheckoutMock.defaultExpectation != nil {
+		mm_atomic.AddUint64(&mmCheckout.CheckoutMock.defaultExpectation.Counter, 1)
+		mm_want := mmCheckout.CheckoutMock.defaultExpectation.params
+		mm_want_ptrs := mmCheckout.CheckoutMock.defaultExpectation.paramPtrs
+
+		mm_got := ServiceMockCheckoutParams{ctx, userID}
+
+		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmCheckout.t.Errorf("ServiceMock.Checkout got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
+
+			if mm_want_ptrs.userID != nil && !minimock.Equal(*mm_want_ptrs.userID, mm_got.userID) {
+				mmCheckout.t.Errorf("ServiceMock.Checkout got unexpected parameter userID, want: %#v, got: %#v%s\n", *mm_want_ptrs.userID, mm_got.userID, minimock.Diff(*mm_want_ptrs.userID, mm_got.userID))
+			}
+
+		} else if mm_want != nil && !minimock.Equal(*mm_want, mm_got) {
+			mmCheckout.t.Errorf("ServiceMock.Checkout got unexpected parameters, want: %#v, got: %#v%s\n", *mm_want, mm_got, minimock.Diff(*mm_want, mm_got))
+		}
+
+		mm_results := mmCheckout.CheckoutMock.defaultExpectation.results
+		if mm_results == nil {
+			mmCheckout.t.Fatal("No results are set for the ServiceMock.Checkout")
+		}
+		return (*mm_results).op1, (*mm_results).err
+	}
+	if mmCheckout.funcCheckout != nil {
+		return mmCheckout.funcCheckout(ctx, userID)
+	}
+	mmCheckout.t.Fatalf("Unexpected call to ServiceMock.Checkout. %v %v", ctx, userID)
+	return
+}
+
+// CheckoutAfterCounter returns a count of finished ServiceMock.Checkout invocations
+func (mmCheckout *ServiceMock) CheckoutAfterCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCheckout.afterCheckoutCounter)
+}
+
+// CheckoutBeforeCounter returns a count of ServiceMock.Checkout invocations
+func (mmCheckout *ServiceMock) CheckoutBeforeCounter() uint64 {
+	return mm_atomic.LoadUint64(&mmCheckout.beforeCheckoutCounter)
+}
+
+// Calls returns a list of arguments used in each call to ServiceMock.Checkout.
+// The list is in the same order as the calls were made (i.e. recent calls have a higher index)
+func (mmCheckout *mServiceMockCheckout) Calls() []*ServiceMockCheckoutParams {
+	mmCheckout.mutex.RLock()
+
+	argCopy := make([]*ServiceMockCheckoutParams, len(mmCheckout.callArgs))
+	copy(argCopy, mmCheckout.callArgs)
+
+	mmCheckout.mutex.RUnlock()
+
+	return argCopy
+}
+
+// MinimockCheckoutDone returns true if the count of the Checkout invocations corresponds
+// the number of defined expectations
+func (m *ServiceMock) MinimockCheckoutDone() bool {
+	if m.CheckoutMock.optional {
+		// Optional methods provide '0 or more' call count restriction.
+		return true
+	}
+
+	for _, e := range m.CheckoutMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			return false
+		}
+	}
+
+	return m.CheckoutMock.invocationsDone()
+}
+
+// MinimockCheckoutInspect logs each unmet expectation
+func (m *ServiceMock) MinimockCheckoutInspect() {
+	for _, e := range m.CheckoutMock.expectations {
+		if mm_atomic.LoadUint64(&e.Counter) < 1 {
+			m.t.Errorf("Expected call to ServiceMock.Checkout with params: %#v", *e.params)
+		}
+	}
+
+	afterCheckoutCounter := mm_atomic.LoadUint64(&m.afterCheckoutCounter)
+	// if default expectation was set then invocations count should be greater than zero
+	if m.CheckoutMock.defaultExpectation != nil && afterCheckoutCounter < 1 {
+		if m.CheckoutMock.defaultExpectation.params == nil {
+			m.t.Error("Expected call to ServiceMock.Checkout")
+		} else {
+			m.t.Errorf("Expected call to ServiceMock.Checkout with params: %#v", *m.CheckoutMock.defaultExpectation.params)
+		}
+	}
+	// if func was set then invocations count should be greater than zero
+	if m.funcCheckout != nil && afterCheckoutCounter < 1 {
+		m.t.Error("Expected call to ServiceMock.Checkout")
+	}
+
+	if !m.CheckoutMock.invocationsDone() && afterCheckoutCounter > 0 {
+		m.t.Errorf("Expected %d calls to ServiceMock.Checkout but found %d calls",
+			mm_atomic.LoadUint64(&m.CheckoutMock.expectedInvocations), afterCheckoutCounter)
 	}
 }
 
@@ -1356,6 +1686,8 @@ func (m *ServiceMock) MinimockFinish() {
 		if !m.minimockDone() {
 			m.MinimockAddItemInspect()
 
+			m.MinimockCheckoutInspect()
+
 			m.MinimockDelCartInspect()
 
 			m.MinimockDelItemInspect()
@@ -1386,6 +1718,7 @@ func (m *ServiceMock) minimockDone() bool {
 	done := true
 	return done &&
 		m.MinimockAddItemDone() &&
+		m.MinimockCheckoutDone() &&
 		m.MinimockDelCartDone() &&
 		m.MinimockDelItemDone() &&
 		m.MinimockGetAllUserItemsDone()
