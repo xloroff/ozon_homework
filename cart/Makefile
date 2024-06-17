@@ -8,7 +8,7 @@ PROTOC = PATH="$$PATH:$(LOCAL_BIN)" protoc
 run:
 	go run ./cmd
 
-run-all: lint
+run-all:
 	go run ./cmd
 
 test:

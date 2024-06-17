@@ -19,3 +19,5 @@ log/app.log
 !/log
 /loms/vendor-proto/
 /cart/vendor-proto/
+.env.dev
+docker-compose-dev.yml
