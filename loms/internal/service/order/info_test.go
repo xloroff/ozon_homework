@@ -59,16 +59,18 @@ func TestInfoTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		orderStorageMock: mock.NewOrderStorageMock(ctrl),
-		stockStorageMock: mock.NewStockStorageMock(ctrl),
-		loggerMock:       logger.InitializeLogger("", 1),
-	}
-
-	servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
-
 	for _, tt := range testData {
+		fieldsForTableTest := fields{
+			orderStorageMock: mock.NewOrderStorageMock(ctrl),
+			stockStorageMock: mock.NewStockStorageMock(ctrl),
+			loggerMock:       logger.InitializeLogger("", 1),
+		}
+
+		servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			fieldsForTableTest.orderStorageMock.GetOrderMock.
 				When(tt.orderID).Then(tt.orderStore, tt.getOrderErr)
 

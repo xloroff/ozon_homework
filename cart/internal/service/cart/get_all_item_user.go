@@ -4,8 +4,13 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"sync"
 
+	"golang.org/x/time/rate"
+
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/config"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/errgroup"
 )
 
 // GetAllUserItems получение корзины пользователя через сервис, вызов клиента для связи с сервисом продуктов и обращение к сервису хранения.
@@ -33,20 +38,43 @@ func (s *cService) fullCartReciver(ctx context.Context, cart *model.Cart) (*mode
 	var result *model.FullUserCart = &model.FullUserCart{}
 	result.Items = make([]*model.UserCartItem, 0, len(cart.Items))
 
-	for skuID, cI := range cart.Items {
-		getProduct, err := s.productCli.GetProduct(ctx, skuID)
-		if err != nil {
-			s.logger.Errorf(ctx, "cartService.fullCartReciver: ошибка получения продукта %v - %v", skuID, err)
-			return nil, fmt.Errorf("Ошибка получения продукта  %v - %w", skuID, err)
-		}
+	mu := sync.Mutex{}
+	erg, ctx := errgroup.NewErrGroup(
+		ctx,
+		errgroup.WithCancelFirst(),
+	)
 
-		result.Items = append(result.Items, &model.UserCartItem{
-			SkuID: skuID,
-			Name:  getProduct.Name,
-			Price: getProduct.Price,
-			Count: cI.Count,
+	limiter := rate.NewLimiter(rate.Limit(config.RPS), 1)
+
+	for skuID, cI := range cart.Items {
+		erg.Go(func() error {
+			if err := limiter.Wait(ctx); err != nil {
+				return fmt.Errorf("Ошибка ожидания при страбатывании лимита RPS %v - %w", config.RPS, err)
+			}
+
+			getProduct, err := s.productCli.GetProduct(ctx, skuID)
+			if err != nil {
+				s.logger.Errorf(ctx, "cartService.fullCartReciver: ошибка получения продукта %v - %v", skuID, err)
+				return fmt.Errorf("Ошибка получения продукта  %v - %w", skuID, err)
+			}
+
+			mu.Lock()
+			defer mu.Unlock()
+
+			result.Items = append(result.Items, &model.UserCartItem{
+				SkuID: skuID,
+				Name:  getProduct.Name,
+				Price: getProduct.Price,
+				Count: cI.Count,
+			})
+			result.TotalPrice += uint32(cI.Count) * getProduct.Price
+
+			return nil
 		})
-		result.TotalPrice += uint32(cI.Count) * getProduct.Price
+	}
+
+	if err := erg.Wait(); err != nil {
+		return nil, fmt.Errorf("Ошибка при формировании результирующей корзины  -  %v", erg.ErrsToString())
 	}
 
 	// Нужно сортирнуть результат по ТЗ

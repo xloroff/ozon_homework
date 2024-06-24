@@ -1,9 +1,9 @@
 stages:
+  - test
   - integrationtest
   - coverage
   - unittest
   - build
-  - test
 
 linter:
   stage: .pre
@@ -19,7 +19,7 @@ cover_cart:
     - cd ./cart
     - go test -vet=off ./... -coverprofile ../cover/cover_cart.out.tmp > /dev/null
     - grep -vE "_mock.go" ../cover/cover_cart.out.tmp |  grep -vE ".pb." |  grep -vE ".proto" > ../cover/cover_cart.out
-    - rm -f ../cover/cover_cart.out.tm
+    - rm -f ../cover/cover_cart.out.tmp
     - go get github.com/boumenot/gocover-cobertura
     - go run github.com/boumenot/gocover-cobertura < ../cover/cover_cart.out > ../cover/cover_cart.xml
     - go tool cover -func ../cover/cover_cart.out
@@ -84,10 +84,13 @@ etoetest:
   script:
     - apt update
     - apt install -y docker-compose
+    - make restart-docker
     - make stop
     - docker system prune -a --force
     - make clear-volume
     - make e2e-test
+    - make stop
+    - make restart-docker
 
 integrationtest:
   stage: integrationtest
@@ -95,7 +98,10 @@ integrationtest:
   script:
     - apt update
     - apt install -y docker-compose
+    - make restart-docker
     - make stop
     - docker system prune -a --force
     - make clear-volume
     - make i-test
+    - make stop
+    - make restart-docker

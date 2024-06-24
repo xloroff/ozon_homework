@@ -2,9 +2,12 @@ package memorystore
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/go-test/deep"
+	"github.com/stretchr/testify/require"
+
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
 )
@@ -57,13 +60,15 @@ func TestDelItem(t *testing.T) {
 		},
 	}
 
-	storage := cartStorage{
-		data:   map[int64]*model.Cart{},
-		logger: logger.InitializeLogger("", 1),
-	}
-
 	for _, tt := range testData {
+		storage := cartStorage{
+			data:   map[int64]*model.Cart{},
+			logger: logger.InitializeLogger("", 1),
+		}
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			for _, addItem := range tt.items {
 				storage.data[addItem.userID] = &model.Cart{
 					Items: map[int64]*model.CartItem{
@@ -88,4 +93,71 @@ func TestDelItem(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDelItemConcurrent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Конкурентное удаление корзины", func(t *testing.T) {
+		t.Parallel()
+
+		loggerMock := logger.InitializeLogger("", 1)
+		storage := &cartStorage{
+			data:   make(map[int64]*model.Cart),
+			logger: loggerMock,
+		}
+		ctx := context.Background()
+		userID := int64(1)
+		skuID1 := int64(100)
+		skuID2 := int64(101)
+
+		storage.data[userID] = &model.Cart{
+			Items: model.CartItems{
+				100: &model.CartItem{Count: 1},
+				101: &model.CartItem{Count: 1},
+			},
+		}
+
+		var wg sync.WaitGroup
+
+		numGoroutines := 100
+
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				iOne := &model.DelItem{}
+
+				iOne.UserID = userID
+				iOne.SkuID = skuID1
+
+				err := storage.DelItem(ctx, iOne)
+				require.True(t, err)
+			}()
+
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				iTwo := &model.DelItem{}
+
+				iTwo.UserID = userID
+				iTwo.SkuID = skuID2
+
+				err := storage.DelItem(ctx, iTwo)
+				require.True(t, err)
+			}()
+		}
+
+		wg.Wait()
+
+		storage.Lock()
+		defer storage.Unlock()
+
+		_, ok := storage.data[userID]
+		require.False(t, ok, "Не должно быть корзины")
+	})
 }

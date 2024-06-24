@@ -2,6 +2,7 @@ package memorystore
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -50,16 +51,18 @@ func TestDelCart(t *testing.T) {
 	}
 
 	for _, tt := range testData {
-		t.Run(tt.name, func(t *testing.T) {
-			storage.data = map[int64]*model.Cart{
-				tt.userID: {
-					Items: map[int64]*model.CartItem{
-						tt.skuID: {
-							Count: tt.count,
-						},
+		storage.data = map[int64]*model.Cart{
+			tt.userID: {
+				Items: map[int64]*model.CartItem{
+					tt.skuID: {
+						Count: tt.count,
 					},
 				},
-			}
+			},
+		}
+
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
 			err := storage.DelCart(ctx, tt.userID)
 			require.NoError(t, err)
@@ -70,4 +73,49 @@ func TestDelCart(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestDelCartConcurrent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Конкурентное удаление корзины", func(t *testing.T) {
+		t.Parallel()
+
+		loggerMock := logger.InitializeLogger("", 1)
+		storage := &cartStorage{
+			data:   make(map[int64]*model.Cart),
+			logger: loggerMock,
+		}
+		ctx := context.Background()
+		userID := int64(1)
+
+		storage.data[userID] = &model.Cart{
+			Items: model.CartItems{
+				100: &model.CartItem{Count: 1},
+			},
+		}
+
+		var wg sync.WaitGroup
+
+		numGoroutines := 100
+
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				err := storage.DelCart(ctx, userID)
+				require.NoError(t, err)
+			}()
+		}
+
+		wg.Wait()
+
+		storage.Lock()
+		defer storage.Unlock()
+
+		_, ok := storage.data[userID]
+		require.False(t, ok, "Не должно быть корзины")
+	})
 }

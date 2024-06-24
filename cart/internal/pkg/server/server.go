@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 
 	"github.com/gorilla/mux"
@@ -78,14 +76,7 @@ func (s *server) Start() error {
 
 	s.logger.Warn(s.ctx, "Сервер запущен...")
 
-	// Обработка сигнала завершения сервера.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// Блокируем выполнение до получения сигнала.
-	<-c
-
-	return s.Stop()
+	return nil
 }
 
 func (s *server) Stop() error {

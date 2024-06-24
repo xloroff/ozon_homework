@@ -2,6 +2,7 @@ package memorystore
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -58,13 +59,15 @@ func TestGetAllUserItems(t *testing.T) {
 		},
 	}
 
-	storage := cartStorage{
-		data:   map[int64]*model.Cart{},
-		logger: logger.InitializeLogger("", 1),
-	}
-
 	for _, tt := range testData {
+		storage := cartStorage{
+			data:   map[int64]*model.Cart{},
+			logger: logger.InitializeLogger("", 1),
+		}
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			for _, addItem := range tt.items {
 				if _, ok := storage.data[addItem.userID]; !ok {
 					storage.data[addItem.userID] = &model.Cart{Items: map[int64]*model.CartItem{}}
@@ -84,4 +87,46 @@ func TestGetAllUserItems(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGetAllUserItemsConcurrent(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Конкурентное получение итемов корзины", func(t *testing.T) {
+		t.Parallel()
+
+		loggerMock := logger.InitializeLogger("", 1)
+		storage := &cartStorage{
+			data:   make(map[int64]*model.Cart),
+			logger: loggerMock,
+		}
+		ctx := context.Background()
+		userID := int64(1)
+
+		storage.data[userID] = &model.Cart{
+			Items: model.CartItems{
+				100: &model.CartItem{Count: 1},
+				101: &model.CartItem{Count: 2},
+			},
+		}
+
+		var wg sync.WaitGroup
+
+		numGoroutines := 100
+
+		for i := 0; i < numGoroutines; i++ {
+			wg.Add(1)
+
+			go func() {
+				defer wg.Done()
+
+				cart, err := storage.GetAllUserItems(ctx, userID)
+				require.NoError(t, err)
+				require.NotNil(t, cart)
+				require.Len(t, cart.Items, 2)
+			}()
+		}
+
+		wg.Wait()
+	})
 }

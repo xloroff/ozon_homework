@@ -5,8 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"os/signal"
 	"time"
 
 	"google.golang.org/grpc"
@@ -22,14 +20,13 @@ import (
 // Server интерфейс управляющий HTTP-сервером.
 type Server interface {
 	Start() error
-	Stop() error
+	Stop(dur float64) error
 	RegisterAPI() error
 }
 
 type server struct {
 	ctx        context.Context
 	logger     logger.ILog
-	settings   *config.ApplicationParameters
 	mux        *http.ServeMux
 	gwmux      *runtime.ServeMux
 	conn       *grpc.ClientConn
@@ -92,21 +89,14 @@ func (s *server) Start() error {
 
 	s.logger.Warn(s.ctx, "HTTP cервер запущен...")
 
-	// Обработка сигнала завершения сервера.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// Блокируем выполнение до получения сигнала.
-	<-c
-
-	return s.Stop()
+	return nil
 }
 
 // Stop останавливает HTTP-сервер.
-func (s *server) Stop() error {
+func (s *server) Stop(dur float64) error {
 	defer s.logger.Warn(s.ctx, "Остановка HTTP-сервера произведена...")
 
-	ctx, cancel := context.WithTimeout(s.ctx, time.Duration(s.settings.GracefulTimeout*float64(time.Second)))
+	ctx, cancel := context.WithTimeout(s.ctx, time.Duration(dur*float64(time.Second)))
 	defer cancel()
 
 	err := s.httpServer.Shutdown(ctx)

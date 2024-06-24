@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"syscall"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/config"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/product_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/closer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/server"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/repository/memory_store"
@@ -37,10 +37,6 @@ func NewApp(ctx context.Context) Application {
 
 // Run запуск.
 func (a *app) Run() error {
-	// Канал для сигналов завершения.
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
 	// Стартуем получение конфига
 	cnfg, err := config.LoadAPIConfig()
 	if err != nil {
@@ -50,34 +46,39 @@ func (a *app) Run() error {
 	// Стартуем логгер
 	l := logger.InitializeLogger(cnfg.LogLevel, cnfg.LogType)
 
+	clsr := closer.NewCloser(l, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer clsr.Wait()
+
+	clsr.Add(func() error {
+		return l.Close()
+	})
+
 	// Старт клиентов
 	productCli := productcli.NewProductClient(l, cnfg.ProductServiceSettings)
 	memStore := memorystore.NewCartStorage(l)
 
 	lomsDialler, err := lomscli.ClientDialler(a.ctx, l, cnfg.LomsServiceSettings)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка создания диаллера для сервиса заказов - %w", err)
 	}
 
 	lomsCli := lomscli.NewClient(a.ctx, l, lomsDialler)
 
 	// Стартуем веб-сервер.
-	err = server.NewServer(a.ctx, l, cnfg, productCli, lomsCli, memStore).Start()
+	webSrvr := server.NewServer(a.ctx, l, cnfg, productCli, lomsCli, memStore)
+
+	err = webSrvr.Start()
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка запуска сервера - %w", err)
 	}
 
-	// Обработка сигналов завершения.
-	go func() {
-		<-sigChan
-		l.Warnf(a.ctx, "Получен сигнал завершения, остановка приложения произведена...")
-
-		defer l.Close()
-		defer a.cancel()
-	}()
-
-	// Блокировка до завершения контекста.
-	<-a.ctx.Done()
+	clsr.Add(func() error {
+		return webSrvr.Stop()
+	})
 
 	return nil
 }

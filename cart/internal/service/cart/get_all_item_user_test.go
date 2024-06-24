@@ -3,6 +3,7 @@ package cart
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/go-test/deep"
@@ -106,29 +107,54 @@ func TestGetAllUserItemsTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		productCliMock: mock.NewProductClientMock(ctrl),
-		storageMock:    mock.NewStorageMock(ctrl),
-		loggerMock:     logger.InitializeLogger("", 1),
-		lomsCliMock:    mock.NewLomsClientMock(ctrl),
+	newService := func() (*fields, Service) {
+		fieldsForTableTest := &fields{
+			productCliMock: mock.NewProductClientMock(ctrl),
+			storageMock:    mock.NewStorageMock(ctrl),
+			loggerMock:     logger.InitializeLogger("", 1),
+			lomsCliMock:    mock.NewLomsClientMock(ctrl),
+		}
+		servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
+
+		return fieldsForTableTest, servM
 	}
 
-	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
-
 	for _, tt := range testData {
+		f, s := newService()
+
 		t.Run(tt.name, func(t *testing.T) {
-			fieldsForTableTest.storageMock.GetAllUserItemsMock.
+			t.Parallel()
+
+			f.storageMock.GetAllUserItemsMock.
 				When(ctx, tt.userID).
 				Then(tt.cart, tt.wantErr)
 
-			for s := range tt.cart.Items {
-				resp := tt.prodResp[s]
-				fieldsForTableTest.productCliMock.GetProductMock.
-					When(ctx, s).
-					Then(&resp, tt.wantErr)
+			var wg sync.WaitGroup
+
+			var mu sync.Mutex
+
+			for k := range tt.cart.Items {
+				wg.Add(1)
+
+				k := k
+				tt := tt
+
+				go func() {
+					defer wg.Done()
+
+					resp := tt.prodResp[k]
+
+					mu.Lock()
+					f.productCliMock.GetProductMock.
+						When(minimock.AnyContext, k).
+						Then(&resp, tt.wantErr)
+					mu.Unlock()
+				}()
 			}
 
-			cart, err := servM.GetAllUserItems(ctx, tt.userID)
+			wg.Wait()
+
+			cart, err := s.GetAllUserItems(ctx, tt.userID)
 			require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)
 
 			diff := deep.Equal(cart, tt.stor)

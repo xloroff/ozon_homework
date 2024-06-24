@@ -87,7 +87,6 @@ func TestAddItemTable(t *testing.T) {
 					Name:  "Тестовый товар 3",
 					Price: 500,
 				}, nil)
-				f.storageMock.AddItemMock.Return(nil)
 				f.lomsCliMock.StockInfoMock.Return(10, nil)
 			},
 			wantErr: model.ErrDontHaveReserveCount,
@@ -96,26 +95,33 @@ func TestAddItemTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		productCliMock: mock.NewProductClientMock(ctrl),
-		storageMock:    mock.NewStorageMock(ctrl),
-		loggerMock:     logger.InitializeLogger("", 1),
-		lomsCliMock:    mock.NewLomsClientMock(ctrl),
+	newService := func() (*fields, Service) {
+		fieldsForTableTest := &fields{
+			productCliMock: mock.NewProductClientMock(ctrl),
+			storageMock:    mock.NewStorageMock(ctrl),
+			loggerMock:     logger.InitializeLogger("", 1),
+			lomsCliMock:    mock.NewLomsClientMock(ctrl),
+		}
+		servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
+
+		return fieldsForTableTest, servM
 	}
 
-	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
-
 	for _, tt := range testData {
+		f, s := newService()
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			item := &model.AddItem{}
 
 			item.UsrSkuID.SkuID = tt.skuID
 			item.AddItemBody.Count = tt.count
 			item.UserIdintyfier.UserID = tt.userID
 
-			tt.prepare(&fieldsForTableTest)
+			tt.prepare(f)
 
-			err := servM.AddItem(ctx, item)
+			err := s.AddItem(ctx, item)
 			require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)
 		})
 	}
