@@ -1,9 +1,8 @@
 package lomscli
 
 import (
+	"context"
 	"fmt"
-
-	"go.uber.org/zap"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pb/api/order/v1"
@@ -11,12 +10,12 @@ import (
 )
 
 // AddOrder создает заказ на сервисе заказов.
-func (c *lomsClient) AddOrder(userID int64, cart *model.Cart) (int64, error) {
-	ctx := logger.Append(c.ctx, []zap.Field{zap.Any("cart", cart)})
+func (c *lomsClient) AddOrder(ctx context.Context, userID int64, cart *model.Cart) (int64, error) {
+	ctx = logger.AddFieldsToContext(ctx, "data", cart, "user_id", userID)
 	c.logger.Debugf(ctx, "LomsCli.AddOrder: начал обращение в сервис LOMS, создание заказа пользователь - %v", userID)
 	defer c.logger.Debugf(ctx, "LomsCli.AddOrder: закончил обращение в сервис LOMS, создание заказа пользователь - %v", userID)
 
-	resp, err := c.order.Create(c.ctx, cartToOrder(userID, cart))
+	resp, err := c.order.Create(ctx, cartToOrder(userID, cart))
 	if err != nil {
 		return 0, fmt.Errorf("Ошибка создания заказа - %w", err)
 	}

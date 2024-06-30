@@ -29,7 +29,7 @@ func TestDelCartTable(t *testing.T) {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
 		lomsCliMock    *mock.LomsClientMock
-		loggerMock     logger.ILog
+		loggerMock     logger.Logger
 	}
 
 	testData := []data{
@@ -65,7 +65,7 @@ func TestDelCartTable(t *testing.T) {
 			t.Parallel()
 
 			f.storageMock.DelCartMock.
-				When(ctx, tt.userID).
+				When(minimock.AnyContext, tt.userID).
 				Then(tt.wantErr)
 
 			err := s.DelCart(ctx, tt.userID)

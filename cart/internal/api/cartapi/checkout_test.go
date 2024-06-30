@@ -49,7 +49,7 @@ func TestCheckoutTable(t *testing.T) {
 			userID:      1,
 			count:       1,
 			errService:  model.ErrNotFound,
-			wantCodeAns: http.StatusBadRequest,
+			wantCodeAns: http.StatusPreconditionFailed,
 		},
 		{
 			name:   "Слой API: Корзина существует",

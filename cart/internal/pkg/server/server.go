@@ -27,12 +27,12 @@ type server struct {
 	ctx        context.Context
 	router     *mux.Router
 	httpServer *http.Server
-	logger     logger.ILog
+	logger     logger.Logger
 	config     *config.ApplicationParameters
 }
 
 // NewServer создает экземпляр http сервера с таймингами работы прикладов.
-func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParameters, productCli productcli.Client, lomsCli lomscli.LomsService, memStore memorystore.Storage) AppServer {
+func NewServer(ctx context.Context, l logger.Logger, cnfg *config.ApplicationParameters, productCli productcli.Client, lomsCli lomscli.LomsService, memStore memorystore.Storage) AppServer {
 	l.Warn(ctx, "Запуск сервера...")
 
 	// Создаем новый роутер.

@@ -29,21 +29,23 @@ type Suite struct {
 	suite.Suite
 	ctx          context.Context
 	dbClient     db.ClientBD
-	logger       logger.ILog
+	logger       logger.Logger
 	stockStorage stockstore.Storage
 	orderStorage orderstore.Storage
 }
 
 func TestIntegrationTest(t *testing.T) {
 	suite.Run(t, &Suite{})
-
 }
 
 func (s *Suite) SetupSuite() {
-	s.ctx = context.Background()
-	s.logger = logger.InitializeLogger("", 1)
-
 	var err error
+
+	s.ctx = context.Background()
+
+	s.Require().NoError(err, "Ошибка миграции БД")
+
+	s.logger = logger.InitializeLogger("", 1)
 
 	TestDB1Url := os.Getenv("DB_NODE_1_CON")
 	TestDB2Url := os.Getenv("DB_SYNC_1_CON")
@@ -68,28 +70,28 @@ func (s *Suite) SetupSuite() {
 	if err != nil {
 		s.Require().NoError(err, "Ошибка создания хранилища заказов")
 	}
-
 }
 
 func (s *Suite) TearDownSuite() {
-	s.dbClient.Close()
+	err := s.dbClient.Close()
+	s.Require().NoError(err, "Ошибка закрытия соединения с БД")
 }
 
 func (s *Suite) TestUnknownSkuIDStockStorage() {
 	// Запрос несуществующего SKU в остатках.
-	_, err := s.stockStorage.GetAvailableForReserve(123)
+	_, err := s.stockStorage.GetAvailableForReserve(s.ctx, 123)
 	s.Require().Error(err, "Нет ошибки при запросе несуществующего запаса")
 }
 
 func (s *Suite) TestReserveStockStorage() {
 	// Проверяем корректность резервирования товаров.
 	// Получаем количество до выполнения.
-	cnt, err := s.stockStorage.GetAvailableForReserve(sku1)
+	cnt, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku1)
 	s.Require().NoError(err, "Ошибка получения количества")
 	s.Require().Equal(uint16(60), cnt, "Не совпало количество при старте теста")
 
 	// Резервируем 5.
-	err = s.stockStorage.AddReserve(model.AllNeedReserve{
+	err = s.stockStorage.AddReserve(s.ctx, model.AllNeedReserve{
 		&model.NeedReserve{
 			Sku:   sku1,
 			Count: 5,
@@ -98,12 +100,12 @@ func (s *Suite) TestReserveStockStorage() {
 	s.Require().NoError(err, "Ошибка при резервировании")
 
 	// Получаем количество после резервирования.
-	cntTwo, err := s.stockStorage.GetAvailableForReserve(sku1)
+	cntTwo, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku1)
 	s.Require().NoError(err, "Ошибка при получении количества")
 	s.Require().Equal(uint16(55), cntTwo, "Не совпало количество после первого резервирования")
 
 	// Резервируем 30 штук.
-	err = s.stockStorage.AddReserve(model.AllNeedReserve{
+	err = s.stockStorage.AddReserve(s.ctx, model.AllNeedReserve{
 		&model.NeedReserve{
 			Sku:   sku1,
 			Count: 30,
@@ -112,7 +114,7 @@ func (s *Suite) TestReserveStockStorage() {
 	s.Require().NoError(err, "Ошибка при резервировании")
 
 	// Получаем количество после резервирования.
-	cntThree, err := s.stockStorage.GetAvailableForReserve(sku1)
+	cntThree, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku1)
 	s.Require().NoError(err, "Ошибка при получении количества")
 	s.Require().Equal(uint16(25), cntThree, "Не совпало количество после второго резервирования")
 }
@@ -120,12 +122,12 @@ func (s *Suite) TestReserveStockStorage() {
 func (s *Suite) TestCancelReserveStockStorage() {
 	// Проверяем корректность снятия резерва
 	// Получаем количество до выполнения.
-	cnt, err := s.stockStorage.GetAvailableForReserve(sku2)
+	cnt, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku2)
 	s.Require().NoError(err, "Ошибка получения количества")
 	s.Require().Equal(uint16(90), cnt, "Не совпало количество при старте теста")
 
 	// Резервируем 5.
-	err = s.stockStorage.AddReserve(model.AllNeedReserve{
+	err = s.stockStorage.AddReserve(s.ctx, model.AllNeedReserve{
 		&model.NeedReserve{
 			Sku:   sku2,
 			Count: 5,
@@ -134,12 +136,12 @@ func (s *Suite) TestCancelReserveStockStorage() {
 	s.Require().NoError(err, "Ошибка при резервировании")
 
 	// Получаем количество после резервирования.
-	cntTwo, err := s.stockStorage.GetAvailableForReserve(sku2)
+	cntTwo, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku2)
 	s.Require().NoError(err, "Ошибка при получении количества")
 	s.Require().Equal(uint16(85), cntTwo, "Не совпало количество после первого резервирования")
 
 	// Отменяем резерв
-	err = s.stockStorage.CancelReserve(model.AllNeedReserve{
+	err = s.stockStorage.CancelReserve(s.ctx, model.AllNeedReserve{
 		&model.NeedReserve{
 			Sku:   sku2,
 			Count: 15,
@@ -148,14 +150,14 @@ func (s *Suite) TestCancelReserveStockStorage() {
 	s.Require().NoError(err, "Ошибка при отмене резерва")
 
 	// Получаем количество после отмены резервировани.
-	cntThree, err := s.stockStorage.GetAvailableForReserve(sku2)
+	cntThree, err := s.stockStorage.GetAvailableForReserve(s.ctx, sku2)
 	s.Require().NoError(err, "Ошибка получения количества")
 	s.Require().Equal(uint16(100), cntThree, "Не совпало количество после отмены резерва")
 }
 
 func (s *Suite) TestCancelTooMahStockStorage() {
 	// Отменяем резерв
-	err := s.stockStorage.CancelReserve(model.AllNeedReserve{
+	err := s.stockStorage.CancelReserve(s.ctx, model.AllNeedReserve{
 		&model.NeedReserve{
 			Sku:   sku2,
 			Count: 10000,
@@ -166,7 +168,7 @@ func (s *Suite) TestCancelTooMahStockStorage() {
 
 func (s *Suite) TestOrdersCreateOrderStorage() {
 	// Тестируем создание заказа и получение заказа.
-	orderID, err := s.orderStorage.AddOrder(user1, model.OrderItems{
+	orderID, err := s.orderStorage.AddOrder(s.ctx, user1, model.OrderItems{
 		&model.OrderItem{
 			Sku:   sku3,
 			Count: 10,
@@ -176,7 +178,7 @@ func (s *Suite) TestOrdersCreateOrderStorage() {
 	s.Require().GreaterOrEqual(orderID, int64(1), "Не совпал ID созданного заказа")
 
 	// Получаем созданный заказ
-	order, err := s.orderStorage.GetOrder(orderID)
+	order, err := s.orderStorage.GetOrder(s.ctx, orderID)
 	s.Require().NoError(err, "Ошибка при получении созданного заказа")
 	s.Require().Equal(user1, order.User, "Не совпал ID пользователя")
 	s.Require().Equal(model.OrderStatusNew, order.Status, "Не совпал статус заказа")
@@ -186,7 +188,7 @@ func (s *Suite) TestOrdersCreateOrderStorage() {
 
 func (s *Suite) TestOrdersChangeStatusOrderStorage() {
 	// Тестируем создание заказа и смену статуса после его отмены.
-	orderID, err := s.orderStorage.AddOrder(user2, model.OrderItems{
+	orderID, err := s.orderStorage.AddOrder(s.ctx, user2, model.OrderItems{
 		&model.OrderItem{
 			Sku:   sku4,
 			Count: 10,
@@ -196,11 +198,11 @@ func (s *Suite) TestOrdersChangeStatusOrderStorage() {
 	s.Require().GreaterOrEqual(orderID, int64(1), "Не совпал ID созданного заказа")
 
 	// Изменяем статусу заказа
-	err = s.orderStorage.SetStatus(orderID, model.OrderStatusAwaitingPayment)
+	err = s.orderStorage.SetStatus(s.ctx, orderID, model.OrderStatusAwaitingPayment)
 	s.Require().NoError(err, "Ошибка при изменении статуса заказа")
 
 	// Получаем созданный заказ
-	order, err := s.orderStorage.GetOrder(orderID)
+	order, err := s.orderStorage.GetOrder(s.ctx, orderID)
 	s.Require().NoError(err, "Ошибка при получении созданного заказа")
 	s.Require().Equal(user2, order.User, "Не совпал ID пользователя")
 	s.Require().Equal(model.OrderStatusAwaitingPayment, order.Status, "Не совпал статус заказа")

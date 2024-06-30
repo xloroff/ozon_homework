@@ -5,8 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/http/pprof"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 
@@ -26,7 +28,7 @@ type Server interface {
 
 type server struct {
 	ctx        context.Context
-	logger     logger.ILog
+	logger     logger.Logger
 	mux        *http.ServeMux
 	gwmux      *runtime.ServeMux
 	conn       *grpc.ClientConn
@@ -34,7 +36,7 @@ type server struct {
 }
 
 // NewServer создает новый экземпляр HTTP сервера.
-func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParameters) (Server, error) {
+func NewServer(ctx context.Context, l logger.Logger, cnfg *config.ApplicationParameters) (Server, error) {
 	var err error
 
 	s := &server{
@@ -68,8 +70,17 @@ func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParam
 		w.WriteHeader(http.StatusOK)
 	})
 
+	// Профайлинг
+	s.mux.HandleFunc("/debug/pprof/", pprof.Index)
+	s.mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+	s.mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+	s.mux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+	s.mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
 	// Прокидываем клиента GRPC.
 	s.mux.Handle("/", s.gwmux)
+
+	s.mux.Handle("/metrics", promhttp.Handler())
 
 	return s, nil
 }

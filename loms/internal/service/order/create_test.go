@@ -25,7 +25,7 @@ func TestCreateTable(t *testing.T) {
 	type fields struct {
 		stockStorageMock *mock.StockStorageMock
 		orderStorageMock *mock.OrderStorageMock
-		loggerMock       logger.ILog
+		loggerMock       logger.Logger
 	}
 
 	type data struct {
@@ -118,16 +118,16 @@ func TestCreateTable(t *testing.T) {
 
 	for _, tt := range testData {
 		fieldsForTableTest.orderStorageMock.AddOrderMock.
-			Expect(tt.userID, resevToOrders(*tt.items)).Return(tt.orderID, tt.addOrderErr)
+			Expect(minimock.AnyContext, tt.userID, resevToOrders(*tt.items)).Return(tt.orderID, tt.addOrderErr)
 
 		fieldsForTableTest.stockStorageMock.AddReserveMock.
-			Expect(*tt.items).Return(tt.reserveStockErr)
+			Expect(minimock.AnyContext, *tt.items).Return(tt.reserveStockErr)
 
 		fieldsForTableTest.orderStorageMock.SetStatusMock.
-			Expect(tt.orderID, tt.status).Return(tt.setStatusErr)
+			Expect(minimock.AnyContext, tt.orderID, tt.status).Return(tt.setStatusErr)
 
 		t.Run(tt.name, func(t *testing.T) {
-			orderID, err := servO.Create(tt.userID, *tt.items)
+			orderID, err := servO.Create(ctx, tt.userID, *tt.items)
 			if tt.wantErr != nil {
 				require.NotNil(t, err, "Должна быть ошибка")
 				require.ErrorIs(t, err, tt.wantErr, "Не та ошибка")

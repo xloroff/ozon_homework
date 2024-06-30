@@ -1,0 +1,15 @@
+scrape_configs:
+  - job_name: "prometheus"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ["localhost:${PROMETAPP_TOPORT}"]
+
+  - job_name: "${LOMS_APP_NAME}"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['${LOMS_APP_NAME}:${LOMSHTTP_TOPORT}']
+
+  - job_name: "${CART_APP_NAME}"
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['${CART_APP_NAME}:${CARTAPP_TOPORT}']

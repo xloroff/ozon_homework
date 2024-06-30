@@ -19,11 +19,13 @@ type Storage interface {
 type cartStorage struct {
 	sync.RWMutex
 	data   map[int64]*model.Cart
-	logger logger.ILog
+	logger logger.Logger
 }
 
+const storeName = "repositoryMemory"
+
 // NewCartStorage создаем хранилище.
-func NewCartStorage(l logger.ILog) Storage {
+func NewCartStorage(l logger.Logger) Storage {
 	var memStorage map[int64]*model.Cart = map[int64]*model.Cart{}
 
 	return &cartStorage{

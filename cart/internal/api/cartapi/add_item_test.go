@@ -108,7 +108,7 @@ func TestAddItemTable(t *testing.T) {
 			item.UserIdintyfier.UserID = tt.userID
 
 			if !errors.Is(tt.errService, someError) {
-				servMock.AddItemMock.Expect(minimock.AnyContext, item).Return(tt.errService)
+				servMock.AddItemMock.When(minimock.AnyContext, item).Then(tt.errService)
 			}
 
 			var jsonReq []byte

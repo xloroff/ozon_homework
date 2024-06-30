@@ -35,7 +35,7 @@ func TestCheckoutTable(t *testing.T) {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
 		lomsCliMock    *mock.LomsClientMock
-		loggerMock     logger.ILog
+		loggerMock     logger.Logger
 	}
 
 	testData := []data{
@@ -97,12 +97,12 @@ func TestCheckoutTable(t *testing.T) {
 			t.Parallel()
 
 			f.storageMock.GetAllUserItemsMock.
-				When(ctx, tt.userID).
+				When(minimock.AnyContext, tt.userID).
 				Then(tt.cart, tt.wantErr)
 
 			if tt.order != nil {
 				f.lomsCliMock.AddOrderMock.
-					When(tt.userID, tt.cart).
+					When(minimock.AnyContext, tt.userID, tt.cart).
 					Then(1, tt.lomsErr)
 
 				tt.wantErr = tt.lomsErr
@@ -110,7 +110,7 @@ func TestCheckoutTable(t *testing.T) {
 
 			if tt.lomsErr == nil && tt.wantErr == nil {
 				f.storageMock.DelCartMock.
-					When(ctx, tt.userID).
+					When(minimock.AnyContext, tt.userID).
 					Then(nil)
 			}
 

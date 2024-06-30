@@ -10,6 +10,7 @@ import (
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/config"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/grpc_server/interceptor"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/grpc_server/middleware"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
 )
 
@@ -22,18 +23,20 @@ type AppServer interface {
 
 type server struct {
 	ctx        context.Context
-	logger     logger.ILog
+	logger     logger.Logger
 	settings   *config.ApplicationParameters
 	grpcServer *grpc.Server
 }
 
 // NewServer создает экземпляр grpc сервера.
-func NewServer(ctx context.Context, l logger.ILog, cnfg *config.ApplicationParameters) AppServer {
+func NewServer(ctx context.Context, l logger.Logger, cnfg *config.ApplicationParameters) AppServer {
 	i := interceptor.NewInterceptor(ctx, l)
 
 	grpcServer := grpc.NewServer(
 
 		grpc.ChainUnaryInterceptor(
+			middleware.Tracer,
+			middleware.Metrics,
 			i.Logger(),
 			i.Panic(),
 			i.Validate(),

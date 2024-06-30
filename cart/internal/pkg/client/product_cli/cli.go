@@ -16,12 +16,12 @@ type Client interface {
 }
 
 type client struct {
-	logger logger.ILog
+	logger logger.Logger
 	config *config.ProductServiceSettings
 }
 
 // NewProductClient создает новый клиент.
-func NewProductClient(l logger.ILog, stngs *config.ProductServiceSettings) Client {
+func NewProductClient(l logger.Logger, stngs *config.ProductServiceSettings) Client {
 	return &client{
 		logger: l,
 		config: stngs,

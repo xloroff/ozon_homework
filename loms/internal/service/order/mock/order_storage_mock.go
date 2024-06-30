@@ -5,6 +5,7 @@ package mock
 //go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/order_store.Storage -o order_storage_mock.go -n OrderStorageMock -p mock
 
 import (
+	"context"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -18,20 +19,20 @@ type OrderStorageMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcAddOrder          func(user int64, items model.OrderItems) (i1 int64, err error)
-	inspectFuncAddOrder   func(user int64, items model.OrderItems)
+	funcAddOrder          func(ctx context.Context, user int64, items model.OrderItems) (i1 int64, err error)
+	inspectFuncAddOrder   func(ctx context.Context, user int64, items model.OrderItems)
 	afterAddOrderCounter  uint64
 	beforeAddOrderCounter uint64
 	AddOrderMock          mOrderStorageMockAddOrder
 
-	funcGetOrder          func(orderID int64) (op1 *model.Order, err error)
-	inspectFuncGetOrder   func(orderID int64)
+	funcGetOrder          func(ctx context.Context, orderID int64) (op1 *model.Order, err error)
+	inspectFuncGetOrder   func(ctx context.Context, orderID int64)
 	afterGetOrderCounter  uint64
 	beforeGetOrderCounter uint64
 	GetOrderMock          mOrderStorageMockGetOrder
 
-	funcSetStatus          func(orderID int64, status string) (err error)
-	inspectFuncSetStatus   func(orderID int64, status string)
+	funcSetStatus          func(ctx context.Context, orderID int64, status string) (err error)
+	inspectFuncSetStatus   func(ctx context.Context, orderID int64, status string)
 	afterSetStatusCounter  uint64
 	beforeSetStatusCounter uint64
 	SetStatusMock          mOrderStorageMockSetStatus
@@ -82,12 +83,14 @@ type OrderStorageMockAddOrderExpectation struct {
 
 // OrderStorageMockAddOrderParams contains parameters of the Storage.AddOrder
 type OrderStorageMockAddOrderParams struct {
+	ctx   context.Context
 	user  int64
 	items model.OrderItems
 }
 
 // OrderStorageMockAddOrderParamPtrs contains pointers to parameters of the Storage.AddOrder
 type OrderStorageMockAddOrderParamPtrs struct {
+	ctx   *context.Context
 	user  *int64
 	items *model.OrderItems
 }
@@ -109,7 +112,7 @@ func (mmAddOrder *mOrderStorageMockAddOrder) Optional() *mOrderStorageMockAddOrd
 }
 
 // Expect sets up expected params for Storage.AddOrder
-func (mmAddOrder *mOrderStorageMockAddOrder) Expect(user int64, items model.OrderItems) *mOrderStorageMockAddOrder {
+func (mmAddOrder *mOrderStorageMockAddOrder) Expect(ctx context.Context, user int64, items model.OrderItems) *mOrderStorageMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Set")
 	}
@@ -122,7 +125,7 @@ func (mmAddOrder *mOrderStorageMockAddOrder) Expect(user int64, items model.Orde
 		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by ExpectParams functions")
 	}
 
-	mmAddOrder.defaultExpectation.params = &OrderStorageMockAddOrderParams{user, items}
+	mmAddOrder.defaultExpectation.params = &OrderStorageMockAddOrderParams{ctx, user, items}
 	for _, e := range mmAddOrder.expectations {
 		if minimock.Equal(e.params, mmAddOrder.defaultExpectation.params) {
 			mmAddOrder.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmAddOrder.defaultExpectation.params)
@@ -132,8 +135,30 @@ func (mmAddOrder *mOrderStorageMockAddOrder) Expect(user int64, items model.Orde
 	return mmAddOrder
 }
 
-// ExpectUserParam1 sets up expected param user for Storage.AddOrder
-func (mmAddOrder *mOrderStorageMockAddOrder) ExpectUserParam1(user int64) *mOrderStorageMockAddOrder {
+// ExpectCtxParam1 sets up expected param ctx for Storage.AddOrder
+func (mmAddOrder *mOrderStorageMockAddOrder) ExpectCtxParam1(ctx context.Context) *mOrderStorageMockAddOrder {
+	if mmAddOrder.mock.funcAddOrder != nil {
+		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Set")
+	}
+
+	if mmAddOrder.defaultExpectation == nil {
+		mmAddOrder.defaultExpectation = &OrderStorageMockAddOrderExpectation{}
+	}
+
+	if mmAddOrder.defaultExpectation.params != nil {
+		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Expect")
+	}
+
+	if mmAddOrder.defaultExpectation.paramPtrs == nil {
+		mmAddOrder.defaultExpectation.paramPtrs = &OrderStorageMockAddOrderParamPtrs{}
+	}
+	mmAddOrder.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmAddOrder
+}
+
+// ExpectUserParam2 sets up expected param user for Storage.AddOrder
+func (mmAddOrder *mOrderStorageMockAddOrder) ExpectUserParam2(user int64) *mOrderStorageMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Set")
 	}
@@ -154,8 +179,8 @@ func (mmAddOrder *mOrderStorageMockAddOrder) ExpectUserParam1(user int64) *mOrde
 	return mmAddOrder
 }
 
-// ExpectItemsParam2 sets up expected param items for Storage.AddOrder
-func (mmAddOrder *mOrderStorageMockAddOrder) ExpectItemsParam2(items model.OrderItems) *mOrderStorageMockAddOrder {
+// ExpectItemsParam3 sets up expected param items for Storage.AddOrder
+func (mmAddOrder *mOrderStorageMockAddOrder) ExpectItemsParam3(items model.OrderItems) *mOrderStorageMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Set")
 	}
@@ -177,7 +202,7 @@ func (mmAddOrder *mOrderStorageMockAddOrder) ExpectItemsParam2(items model.Order
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.AddOrder
-func (mmAddOrder *mOrderStorageMockAddOrder) Inspect(f func(user int64, items model.OrderItems)) *mOrderStorageMockAddOrder {
+func (mmAddOrder *mOrderStorageMockAddOrder) Inspect(f func(ctx context.Context, user int64, items model.OrderItems)) *mOrderStorageMockAddOrder {
 	if mmAddOrder.mock.inspectFuncAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("Inspect function is already set for OrderStorageMock.AddOrder")
 	}
@@ -201,7 +226,7 @@ func (mmAddOrder *mOrderStorageMockAddOrder) Return(i1 int64, err error) *OrderS
 }
 
 // Set uses given function f to mock the Storage.AddOrder method
-func (mmAddOrder *mOrderStorageMockAddOrder) Set(f func(user int64, items model.OrderItems) (i1 int64, err error)) *OrderStorageMock {
+func (mmAddOrder *mOrderStorageMockAddOrder) Set(f func(ctx context.Context, user int64, items model.OrderItems) (i1 int64, err error)) *OrderStorageMock {
 	if mmAddOrder.defaultExpectation != nil {
 		mmAddOrder.mock.t.Fatalf("Default expectation is already set for the Storage.AddOrder method")
 	}
@@ -216,14 +241,14 @@ func (mmAddOrder *mOrderStorageMockAddOrder) Set(f func(user int64, items model.
 
 // When sets expectation for the Storage.AddOrder which will trigger the result defined by the following
 // Then helper
-func (mmAddOrder *mOrderStorageMockAddOrder) When(user int64, items model.OrderItems) *OrderStorageMockAddOrderExpectation {
+func (mmAddOrder *mOrderStorageMockAddOrder) When(ctx context.Context, user int64, items model.OrderItems) *OrderStorageMockAddOrderExpectation {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("OrderStorageMock.AddOrder mock is already set by Set")
 	}
 
 	expectation := &OrderStorageMockAddOrderExpectation{
 		mock:   mmAddOrder.mock,
-		params: &OrderStorageMockAddOrderParams{user, items},
+		params: &OrderStorageMockAddOrderParams{ctx, user, items},
 	}
 	mmAddOrder.expectations = append(mmAddOrder.expectations, expectation)
 	return expectation
@@ -256,15 +281,15 @@ func (mmAddOrder *mOrderStorageMockAddOrder) invocationsDone() bool {
 }
 
 // AddOrder implements orderstore.Storage
-func (mmAddOrder *OrderStorageMock) AddOrder(user int64, items model.OrderItems) (i1 int64, err error) {
+func (mmAddOrder *OrderStorageMock) AddOrder(ctx context.Context, user int64, items model.OrderItems) (i1 int64, err error) {
 	mm_atomic.AddUint64(&mmAddOrder.beforeAddOrderCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddOrder.afterAddOrderCounter, 1)
 
 	if mmAddOrder.inspectFuncAddOrder != nil {
-		mmAddOrder.inspectFuncAddOrder(user, items)
+		mmAddOrder.inspectFuncAddOrder(ctx, user, items)
 	}
 
-	mm_params := OrderStorageMockAddOrderParams{user, items}
+	mm_params := OrderStorageMockAddOrderParams{ctx, user, items}
 
 	// Record call args
 	mmAddOrder.AddOrderMock.mutex.Lock()
@@ -283,9 +308,13 @@ func (mmAddOrder *OrderStorageMock) AddOrder(user int64, items model.OrderItems)
 		mm_want := mmAddOrder.AddOrderMock.defaultExpectation.params
 		mm_want_ptrs := mmAddOrder.AddOrderMock.defaultExpectation.paramPtrs
 
-		mm_got := OrderStorageMockAddOrderParams{user, items}
+		mm_got := OrderStorageMockAddOrderParams{ctx, user, items}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmAddOrder.t.Errorf("OrderStorageMock.AddOrder got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.user != nil && !minimock.Equal(*mm_want_ptrs.user, mm_got.user) {
 				mmAddOrder.t.Errorf("OrderStorageMock.AddOrder got unexpected parameter user, want: %#v, got: %#v%s\n", *mm_want_ptrs.user, mm_got.user, minimock.Diff(*mm_want_ptrs.user, mm_got.user))
@@ -306,9 +335,9 @@ func (mmAddOrder *OrderStorageMock) AddOrder(user int64, items model.OrderItems)
 		return (*mm_results).i1, (*mm_results).err
 	}
 	if mmAddOrder.funcAddOrder != nil {
-		return mmAddOrder.funcAddOrder(user, items)
+		return mmAddOrder.funcAddOrder(ctx, user, items)
 	}
-	mmAddOrder.t.Fatalf("Unexpected call to OrderStorageMock.AddOrder. %v %v", user, items)
+	mmAddOrder.t.Fatalf("Unexpected call to OrderStorageMock.AddOrder. %v %v %v", ctx, user, items)
 	return
 }
 
@@ -403,11 +432,13 @@ type OrderStorageMockGetOrderExpectation struct {
 
 // OrderStorageMockGetOrderParams contains parameters of the Storage.GetOrder
 type OrderStorageMockGetOrderParams struct {
+	ctx     context.Context
 	orderID int64
 }
 
 // OrderStorageMockGetOrderParamPtrs contains pointers to parameters of the Storage.GetOrder
 type OrderStorageMockGetOrderParamPtrs struct {
+	ctx     *context.Context
 	orderID *int64
 }
 
@@ -428,7 +459,7 @@ func (mmGetOrder *mOrderStorageMockGetOrder) Optional() *mOrderStorageMockGetOrd
 }
 
 // Expect sets up expected params for Storage.GetOrder
-func (mmGetOrder *mOrderStorageMockGetOrder) Expect(orderID int64) *mOrderStorageMockGetOrder {
+func (mmGetOrder *mOrderStorageMockGetOrder) Expect(ctx context.Context, orderID int64) *mOrderStorageMockGetOrder {
 	if mmGetOrder.mock.funcGetOrder != nil {
 		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by Set")
 	}
@@ -441,7 +472,7 @@ func (mmGetOrder *mOrderStorageMockGetOrder) Expect(orderID int64) *mOrderStorag
 		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by ExpectParams functions")
 	}
 
-	mmGetOrder.defaultExpectation.params = &OrderStorageMockGetOrderParams{orderID}
+	mmGetOrder.defaultExpectation.params = &OrderStorageMockGetOrderParams{ctx, orderID}
 	for _, e := range mmGetOrder.expectations {
 		if minimock.Equal(e.params, mmGetOrder.defaultExpectation.params) {
 			mmGetOrder.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetOrder.defaultExpectation.params)
@@ -451,8 +482,30 @@ func (mmGetOrder *mOrderStorageMockGetOrder) Expect(orderID int64) *mOrderStorag
 	return mmGetOrder
 }
 
-// ExpectOrderIDParam1 sets up expected param orderID for Storage.GetOrder
-func (mmGetOrder *mOrderStorageMockGetOrder) ExpectOrderIDParam1(orderID int64) *mOrderStorageMockGetOrder {
+// ExpectCtxParam1 sets up expected param ctx for Storage.GetOrder
+func (mmGetOrder *mOrderStorageMockGetOrder) ExpectCtxParam1(ctx context.Context) *mOrderStorageMockGetOrder {
+	if mmGetOrder.mock.funcGetOrder != nil {
+		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by Set")
+	}
+
+	if mmGetOrder.defaultExpectation == nil {
+		mmGetOrder.defaultExpectation = &OrderStorageMockGetOrderExpectation{}
+	}
+
+	if mmGetOrder.defaultExpectation.params != nil {
+		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by Expect")
+	}
+
+	if mmGetOrder.defaultExpectation.paramPtrs == nil {
+		mmGetOrder.defaultExpectation.paramPtrs = &OrderStorageMockGetOrderParamPtrs{}
+	}
+	mmGetOrder.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmGetOrder
+}
+
+// ExpectOrderIDParam2 sets up expected param orderID for Storage.GetOrder
+func (mmGetOrder *mOrderStorageMockGetOrder) ExpectOrderIDParam2(orderID int64) *mOrderStorageMockGetOrder {
 	if mmGetOrder.mock.funcGetOrder != nil {
 		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by Set")
 	}
@@ -474,7 +527,7 @@ func (mmGetOrder *mOrderStorageMockGetOrder) ExpectOrderIDParam1(orderID int64) 
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.GetOrder
-func (mmGetOrder *mOrderStorageMockGetOrder) Inspect(f func(orderID int64)) *mOrderStorageMockGetOrder {
+func (mmGetOrder *mOrderStorageMockGetOrder) Inspect(f func(ctx context.Context, orderID int64)) *mOrderStorageMockGetOrder {
 	if mmGetOrder.mock.inspectFuncGetOrder != nil {
 		mmGetOrder.mock.t.Fatalf("Inspect function is already set for OrderStorageMock.GetOrder")
 	}
@@ -498,7 +551,7 @@ func (mmGetOrder *mOrderStorageMockGetOrder) Return(op1 *model.Order, err error)
 }
 
 // Set uses given function f to mock the Storage.GetOrder method
-func (mmGetOrder *mOrderStorageMockGetOrder) Set(f func(orderID int64) (op1 *model.Order, err error)) *OrderStorageMock {
+func (mmGetOrder *mOrderStorageMockGetOrder) Set(f func(ctx context.Context, orderID int64) (op1 *model.Order, err error)) *OrderStorageMock {
 	if mmGetOrder.defaultExpectation != nil {
 		mmGetOrder.mock.t.Fatalf("Default expectation is already set for the Storage.GetOrder method")
 	}
@@ -513,14 +566,14 @@ func (mmGetOrder *mOrderStorageMockGetOrder) Set(f func(orderID int64) (op1 *mod
 
 // When sets expectation for the Storage.GetOrder which will trigger the result defined by the following
 // Then helper
-func (mmGetOrder *mOrderStorageMockGetOrder) When(orderID int64) *OrderStorageMockGetOrderExpectation {
+func (mmGetOrder *mOrderStorageMockGetOrder) When(ctx context.Context, orderID int64) *OrderStorageMockGetOrderExpectation {
 	if mmGetOrder.mock.funcGetOrder != nil {
 		mmGetOrder.mock.t.Fatalf("OrderStorageMock.GetOrder mock is already set by Set")
 	}
 
 	expectation := &OrderStorageMockGetOrderExpectation{
 		mock:   mmGetOrder.mock,
-		params: &OrderStorageMockGetOrderParams{orderID},
+		params: &OrderStorageMockGetOrderParams{ctx, orderID},
 	}
 	mmGetOrder.expectations = append(mmGetOrder.expectations, expectation)
 	return expectation
@@ -553,15 +606,15 @@ func (mmGetOrder *mOrderStorageMockGetOrder) invocationsDone() bool {
 }
 
 // GetOrder implements orderstore.Storage
-func (mmGetOrder *OrderStorageMock) GetOrder(orderID int64) (op1 *model.Order, err error) {
+func (mmGetOrder *OrderStorageMock) GetOrder(ctx context.Context, orderID int64) (op1 *model.Order, err error) {
 	mm_atomic.AddUint64(&mmGetOrder.beforeGetOrderCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetOrder.afterGetOrderCounter, 1)
 
 	if mmGetOrder.inspectFuncGetOrder != nil {
-		mmGetOrder.inspectFuncGetOrder(orderID)
+		mmGetOrder.inspectFuncGetOrder(ctx, orderID)
 	}
 
-	mm_params := OrderStorageMockGetOrderParams{orderID}
+	mm_params := OrderStorageMockGetOrderParams{ctx, orderID}
 
 	// Record call args
 	mmGetOrder.GetOrderMock.mutex.Lock()
@@ -580,9 +633,13 @@ func (mmGetOrder *OrderStorageMock) GetOrder(orderID int64) (op1 *model.Order, e
 		mm_want := mmGetOrder.GetOrderMock.defaultExpectation.params
 		mm_want_ptrs := mmGetOrder.GetOrderMock.defaultExpectation.paramPtrs
 
-		mm_got := OrderStorageMockGetOrderParams{orderID}
+		mm_got := OrderStorageMockGetOrderParams{ctx, orderID}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmGetOrder.t.Errorf("OrderStorageMock.GetOrder got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.orderID != nil && !minimock.Equal(*mm_want_ptrs.orderID, mm_got.orderID) {
 				mmGetOrder.t.Errorf("OrderStorageMock.GetOrder got unexpected parameter orderID, want: %#v, got: %#v%s\n", *mm_want_ptrs.orderID, mm_got.orderID, minimock.Diff(*mm_want_ptrs.orderID, mm_got.orderID))
@@ -599,9 +656,9 @@ func (mmGetOrder *OrderStorageMock) GetOrder(orderID int64) (op1 *model.Order, e
 		return (*mm_results).op1, (*mm_results).err
 	}
 	if mmGetOrder.funcGetOrder != nil {
-		return mmGetOrder.funcGetOrder(orderID)
+		return mmGetOrder.funcGetOrder(ctx, orderID)
 	}
-	mmGetOrder.t.Fatalf("Unexpected call to OrderStorageMock.GetOrder. %v", orderID)
+	mmGetOrder.t.Fatalf("Unexpected call to OrderStorageMock.GetOrder. %v %v", ctx, orderID)
 	return
 }
 
@@ -696,12 +753,14 @@ type OrderStorageMockSetStatusExpectation struct {
 
 // OrderStorageMockSetStatusParams contains parameters of the Storage.SetStatus
 type OrderStorageMockSetStatusParams struct {
+	ctx     context.Context
 	orderID int64
 	status  string
 }
 
 // OrderStorageMockSetStatusParamPtrs contains pointers to parameters of the Storage.SetStatus
 type OrderStorageMockSetStatusParamPtrs struct {
+	ctx     *context.Context
 	orderID *int64
 	status  *string
 }
@@ -722,7 +781,7 @@ func (mmSetStatus *mOrderStorageMockSetStatus) Optional() *mOrderStorageMockSetS
 }
 
 // Expect sets up expected params for Storage.SetStatus
-func (mmSetStatus *mOrderStorageMockSetStatus) Expect(orderID int64, status string) *mOrderStorageMockSetStatus {
+func (mmSetStatus *mOrderStorageMockSetStatus) Expect(ctx context.Context, orderID int64, status string) *mOrderStorageMockSetStatus {
 	if mmSetStatus.mock.funcSetStatus != nil {
 		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Set")
 	}
@@ -735,7 +794,7 @@ func (mmSetStatus *mOrderStorageMockSetStatus) Expect(orderID int64, status stri
 		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by ExpectParams functions")
 	}
 
-	mmSetStatus.defaultExpectation.params = &OrderStorageMockSetStatusParams{orderID, status}
+	mmSetStatus.defaultExpectation.params = &OrderStorageMockSetStatusParams{ctx, orderID, status}
 	for _, e := range mmSetStatus.expectations {
 		if minimock.Equal(e.params, mmSetStatus.defaultExpectation.params) {
 			mmSetStatus.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmSetStatus.defaultExpectation.params)
@@ -745,8 +804,30 @@ func (mmSetStatus *mOrderStorageMockSetStatus) Expect(orderID int64, status stri
 	return mmSetStatus
 }
 
-// ExpectOrderIDParam1 sets up expected param orderID for Storage.SetStatus
-func (mmSetStatus *mOrderStorageMockSetStatus) ExpectOrderIDParam1(orderID int64) *mOrderStorageMockSetStatus {
+// ExpectCtxParam1 sets up expected param ctx for Storage.SetStatus
+func (mmSetStatus *mOrderStorageMockSetStatus) ExpectCtxParam1(ctx context.Context) *mOrderStorageMockSetStatus {
+	if mmSetStatus.mock.funcSetStatus != nil {
+		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Set")
+	}
+
+	if mmSetStatus.defaultExpectation == nil {
+		mmSetStatus.defaultExpectation = &OrderStorageMockSetStatusExpectation{}
+	}
+
+	if mmSetStatus.defaultExpectation.params != nil {
+		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Expect")
+	}
+
+	if mmSetStatus.defaultExpectation.paramPtrs == nil {
+		mmSetStatus.defaultExpectation.paramPtrs = &OrderStorageMockSetStatusParamPtrs{}
+	}
+	mmSetStatus.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmSetStatus
+}
+
+// ExpectOrderIDParam2 sets up expected param orderID for Storage.SetStatus
+func (mmSetStatus *mOrderStorageMockSetStatus) ExpectOrderIDParam2(orderID int64) *mOrderStorageMockSetStatus {
 	if mmSetStatus.mock.funcSetStatus != nil {
 		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Set")
 	}
@@ -767,8 +848,8 @@ func (mmSetStatus *mOrderStorageMockSetStatus) ExpectOrderIDParam1(orderID int64
 	return mmSetStatus
 }
 
-// ExpectStatusParam2 sets up expected param status for Storage.SetStatus
-func (mmSetStatus *mOrderStorageMockSetStatus) ExpectStatusParam2(status string) *mOrderStorageMockSetStatus {
+// ExpectStatusParam3 sets up expected param status for Storage.SetStatus
+func (mmSetStatus *mOrderStorageMockSetStatus) ExpectStatusParam3(status string) *mOrderStorageMockSetStatus {
 	if mmSetStatus.mock.funcSetStatus != nil {
 		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Set")
 	}
@@ -790,7 +871,7 @@ func (mmSetStatus *mOrderStorageMockSetStatus) ExpectStatusParam2(status string)
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.SetStatus
-func (mmSetStatus *mOrderStorageMockSetStatus) Inspect(f func(orderID int64, status string)) *mOrderStorageMockSetStatus {
+func (mmSetStatus *mOrderStorageMockSetStatus) Inspect(f func(ctx context.Context, orderID int64, status string)) *mOrderStorageMockSetStatus {
 	if mmSetStatus.mock.inspectFuncSetStatus != nil {
 		mmSetStatus.mock.t.Fatalf("Inspect function is already set for OrderStorageMock.SetStatus")
 	}
@@ -814,7 +895,7 @@ func (mmSetStatus *mOrderStorageMockSetStatus) Return(err error) *OrderStorageMo
 }
 
 // Set uses given function f to mock the Storage.SetStatus method
-func (mmSetStatus *mOrderStorageMockSetStatus) Set(f func(orderID int64, status string) (err error)) *OrderStorageMock {
+func (mmSetStatus *mOrderStorageMockSetStatus) Set(f func(ctx context.Context, orderID int64, status string) (err error)) *OrderStorageMock {
 	if mmSetStatus.defaultExpectation != nil {
 		mmSetStatus.mock.t.Fatalf("Default expectation is already set for the Storage.SetStatus method")
 	}
@@ -829,14 +910,14 @@ func (mmSetStatus *mOrderStorageMockSetStatus) Set(f func(orderID int64, status 
 
 // When sets expectation for the Storage.SetStatus which will trigger the result defined by the following
 // Then helper
-func (mmSetStatus *mOrderStorageMockSetStatus) When(orderID int64, status string) *OrderStorageMockSetStatusExpectation {
+func (mmSetStatus *mOrderStorageMockSetStatus) When(ctx context.Context, orderID int64, status string) *OrderStorageMockSetStatusExpectation {
 	if mmSetStatus.mock.funcSetStatus != nil {
 		mmSetStatus.mock.t.Fatalf("OrderStorageMock.SetStatus mock is already set by Set")
 	}
 
 	expectation := &OrderStorageMockSetStatusExpectation{
 		mock:   mmSetStatus.mock,
-		params: &OrderStorageMockSetStatusParams{orderID, status},
+		params: &OrderStorageMockSetStatusParams{ctx, orderID, status},
 	}
 	mmSetStatus.expectations = append(mmSetStatus.expectations, expectation)
 	return expectation
@@ -869,15 +950,15 @@ func (mmSetStatus *mOrderStorageMockSetStatus) invocationsDone() bool {
 }
 
 // SetStatus implements orderstore.Storage
-func (mmSetStatus *OrderStorageMock) SetStatus(orderID int64, status string) (err error) {
+func (mmSetStatus *OrderStorageMock) SetStatus(ctx context.Context, orderID int64, status string) (err error) {
 	mm_atomic.AddUint64(&mmSetStatus.beforeSetStatusCounter, 1)
 	defer mm_atomic.AddUint64(&mmSetStatus.afterSetStatusCounter, 1)
 
 	if mmSetStatus.inspectFuncSetStatus != nil {
-		mmSetStatus.inspectFuncSetStatus(orderID, status)
+		mmSetStatus.inspectFuncSetStatus(ctx, orderID, status)
 	}
 
-	mm_params := OrderStorageMockSetStatusParams{orderID, status}
+	mm_params := OrderStorageMockSetStatusParams{ctx, orderID, status}
 
 	// Record call args
 	mmSetStatus.SetStatusMock.mutex.Lock()
@@ -896,9 +977,13 @@ func (mmSetStatus *OrderStorageMock) SetStatus(orderID int64, status string) (er
 		mm_want := mmSetStatus.SetStatusMock.defaultExpectation.params
 		mm_want_ptrs := mmSetStatus.SetStatusMock.defaultExpectation.paramPtrs
 
-		mm_got := OrderStorageMockSetStatusParams{orderID, status}
+		mm_got := OrderStorageMockSetStatusParams{ctx, orderID, status}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmSetStatus.t.Errorf("OrderStorageMock.SetStatus got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.orderID != nil && !minimock.Equal(*mm_want_ptrs.orderID, mm_got.orderID) {
 				mmSetStatus.t.Errorf("OrderStorageMock.SetStatus got unexpected parameter orderID, want: %#v, got: %#v%s\n", *mm_want_ptrs.orderID, mm_got.orderID, minimock.Diff(*mm_want_ptrs.orderID, mm_got.orderID))
@@ -919,9 +1004,9 @@ func (mmSetStatus *OrderStorageMock) SetStatus(orderID int64, status string) (er
 		return (*mm_results).err
 	}
 	if mmSetStatus.funcSetStatus != nil {
-		return mmSetStatus.funcSetStatus(orderID, status)
+		return mmSetStatus.funcSetStatus(ctx, orderID, status)
 	}
-	mmSetStatus.t.Fatalf("Unexpected call to OrderStorageMock.SetStatus. %v %v", orderID, status)
+	mmSetStatus.t.Fatalf("Unexpected call to OrderStorageMock.SetStatus. %v %v %v", ctx, orderID, status)
 	return
 }
 

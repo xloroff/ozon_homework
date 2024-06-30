@@ -19,7 +19,7 @@ type Closer interface {
 
 type closer struct {
 	sync.Mutex
-	logger   logger.ILog
+	logger   logger.Logger
 	once     sync.Once
 	done     chan struct{}
 	funcs    []func() error
@@ -27,7 +27,7 @@ type closer struct {
 }
 
 // NewCloser ожидает сигналы для завершения функций.
-func NewCloser(l logger.ILog, sig ...os.Signal) Closer {
+func NewCloser(l logger.Logger, sig ...os.Signal) Closer {
 	c := &closer{
 		logger:   l,
 		done:     make(chan struct{}),

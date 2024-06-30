@@ -14,7 +14,7 @@ import (
 )
 
 // MigrationPool осуществляет миграцию схемы БД.
-func MigrationPool(ctx context.Context, l logger.ILog, fldr, cnStr string) error {
+func MigrationPool(ctx context.Context, l logger.Logger, fldr, cnStr string) error {
 	db, err := goose.OpenDBWithDriver(config.Dialect, cnStr)
 	if err != nil {
 		return fmt.Errorf("Ошибка связи с базой для осуществления миграций - %w", err)

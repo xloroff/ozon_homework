@@ -1,17 +1,34 @@
 package cartapi
 
-import "net/http"
+import (
+	"net/http"
 
-// Checkout удаляет корзину.
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/metrics"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/tracer"
+)
+
+// Checkout удаляет корзину но создает заказ.
 func (a *API) Checkout(w http.ResponseWriter, r *http.Request) {
-	defer r.Body.Close()
 	ctx := r.Context()
+
+	ctx, span := tracer.StartSpanFromContext(ctx, "api.cartapi.checkout")
+	span.SetTag("component", "cartapi")
+	span.SetTag("http.url", getReqURLTemplate(r))
+	span.SetTag("http.method", r.Method)
+
+	defer span.End()
+
+	metrics.UpdateRequestsTotalWithURL(r.Method, getReqURLTemplate(r))
+
+	defer r.Body.Close()
 
 	usrID, err := a.getUserID(ctx, r)
 	if err != nil {
+		span.SetTag("error", true)
+
 		a.logger.Errorf(ctx, "Api.Checkout: не удалось обработать входящий запрос - %v", err)
 
-		if errResp := a.responseSenderV1(ctx, w, http.StatusBadRequest, http.StatusBadRequest, nil, err); errResp != nil {
+		if errResp := a.responseSender(ctx, w, r, http.StatusBadRequest, nil, err); errResp != nil {
 			a.logger.Debugf(ctx, "Api.Checkout: не удалось отправить ответ - %v", errResp)
 		}
 
@@ -22,16 +39,17 @@ func (a *API) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	ordr, err := a.cartService.Checkout(ctx, usrID)
 	if err != nil {
+		span.SetTag("error", true)
 		a.logger.Errorf(ctx, "Api.Checkout: Ошибка создания заказа пользователя %v - %v", usrID, err)
 
-		if errResp := a.responseSenderV1(ctx, w, http.StatusPreconditionFailed, http.StatusBadRequest, nil, err); errResp != nil {
+		if errResp := a.responseSender(ctx, w, r, http.StatusPreconditionFailed, nil, err); errResp != nil {
 			a.logger.Debugf(ctx, "Api.Checkout: не удалось отправить ответ - %v", errResp)
 		}
 
 		return
 	}
 
-	if errResp := a.responseSenderV1(ctx, w, http.StatusOK, http.StatusBadRequest, ordr, err); errResp != nil {
+	if errResp := a.responseSender(ctx, w, r, http.StatusOK, ordr, nil); errResp != nil {
 		a.logger.Debugf(ctx, "Api.Checkout: не удалось отправить ответ - %v", errResp)
 	}
 }

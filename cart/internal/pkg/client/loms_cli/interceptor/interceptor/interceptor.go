@@ -9,11 +9,11 @@ import (
 // Interceptor структура интерсептора для gRpc.
 type Interceptor struct {
 	ctx    context.Context
-	logger logger.ILog
+	logger logger.Logger
 }
 
 // NewInterceptor создает новый интерсептор.
-func NewInterceptor(ctx context.Context, l logger.ILog) *Interceptor {
+func NewInterceptor(ctx context.Context, l logger.Logger) *Interceptor {
 	return &Interceptor{
 		ctx:    ctx,
 		logger: l,

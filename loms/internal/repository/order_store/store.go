@@ -8,21 +8,25 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/db"
 )
 
+const (
+	repName = "OrderStore"
+)
+
 // Storage имплементирует методы управления хранилищем памяти.
 type Storage interface {
-	AddOrder(user int64, items model.OrderItems) (int64, error)
-	GetOrder(orderID int64) (*model.Order, error)
-	SetStatus(orderID int64, status string) error
+	AddOrder(ctx context.Context, user int64, items model.OrderItems) (int64, error)
+	GetOrder(ctx context.Context, orderID int64) (*model.Order, error)
+	SetStatus(ctx context.Context, orderID int64, status string) error
 }
 
 type orderStorage struct {
 	ctx    context.Context
 	data   db.ClientBD
-	logger logger.ILog
+	logger logger.Logger
 }
 
 // NewOrderStorage создает хранилище заказов.
-func NewOrderStorage(ctx context.Context, l logger.ILog, bdCli db.ClientBD) (Storage, error) {
+func NewOrderStorage(ctx context.Context, l logger.Logger, bdCli db.ClientBD) (Storage, error) {
 	return &orderStorage{
 		ctx:    ctx,
 		data:   bdCli,

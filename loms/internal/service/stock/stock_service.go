@@ -9,17 +9,17 @@ import (
 
 // Service заведем как сервис под апи.
 type Service interface {
-	Info(sku int64) (uint16, error)
+	Info(ctx context.Context, sku int64) (uint16, error)
 }
 
 type sService struct {
 	ctx        context.Context
 	stockStore stockstore.Storage
-	logger     logger.ILog
+	logger     logger.Logger
 }
 
 // NewService создает новый сервис LOMS с хранилищами резервов и хранилищем заказов.
-func NewService(ctx context.Context, l logger.ILog, ss stockstore.Storage) Service {
+func NewService(ctx context.Context, l logger.Logger, ss stockstore.Storage) Service {
 	return &sService{
 		ctx:        ctx,
 		stockStore: ss,

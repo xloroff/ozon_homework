@@ -29,7 +29,7 @@ func TestDelItemTable(t *testing.T) {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
 		lomsCliMock    *mock.LomsClientMock
-		loggerMock     logger.ILog
+		loggerMock     logger.Logger
 	}
 
 	testData := []data{
@@ -81,7 +81,7 @@ func TestDelItemTable(t *testing.T) {
 			item.UserID = tt.userID
 
 			f.storageMock.DelItemMock.
-				When(ctx, &item).
+				When(minimock.AnyContext, &item).
 				Then(tt.memdel)
 
 			err := s.DelItem(ctx, &item)

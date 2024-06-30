@@ -12,3 +12,6 @@ const HTTPCalmStatus = 420
 
 // RPS количество одновременных реквестов в сторонний сервис.
 const RPS = 10
+
+// AppName имя приложения.
+const AppName = "cart"

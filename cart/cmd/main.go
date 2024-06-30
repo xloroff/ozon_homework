@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	_ "net/http/pprof" // nolint:gosec,G108 // Это нормально, судя по линту, тут нужно акцептнуть.
 
 	cartapp "gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/app"
 )

@@ -8,22 +8,26 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/db"
 )
 
+const (
+	repName = "StockStore"
+)
+
 // Storage имплементирует методы управления хранилищем памяти.
 type Storage interface {
-	AddReserve(items model.AllNeedReserve) error
-	GetAvailableForReserve(sku int64) (uint16, error)
-	DelItemFromReserve(items model.AllNeedReserve) error
-	CancelReserve(items model.AllNeedReserve) error
+	AddReserve(ctx context.Context, items model.AllNeedReserve) error
+	GetAvailableForReserve(ctx context.Context, sku int64) (uint16, error)
+	DelItemFromReserve(ctx context.Context, items model.AllNeedReserve) error
+	CancelReserve(ctx context.Context, items model.AllNeedReserve) error
 }
 
 type reserveStorage struct {
 	ctx    context.Context
 	data   db.ClientBD
-	logger logger.ILog
+	logger logger.Logger
 }
 
 // NewReserveStorage создает хранилище остатков.
-func NewReserveStorage(ctx context.Context, l logger.ILog, bdCli db.ClientBD) (Storage, error) {
+func NewReserveStorage(ctx context.Context, l logger.Logger, bdCli db.ClientBD) (Storage, error) {
 	return &reserveStorage{
 		ctx:    ctx,
 		data:   bdCli,
