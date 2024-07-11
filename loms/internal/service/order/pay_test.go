@@ -125,7 +125,7 @@ func TestPayTable(t *testing.T) {
 
 				if tt.delItemErr == nil {
 					fieldsForTableTest.orderStorageMock.SetStatusMock.
-						Expect(minimock.AnyContext, tt.orderID, model.OrderStatusPayed).Return(tt.setStatusErr)
+						Expect(minimock.AnyContext, tt.orderID, tt.orderStore.User, model.OrderStatusPayed).Return(tt.setStatusErr)
 				}
 			}
 

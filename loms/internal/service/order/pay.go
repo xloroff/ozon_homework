@@ -10,7 +10,7 @@ import (
 )
 
 // Pay помечает оплату заказа (меняет статус заказа).
-func (s *oService) Pay(ctx context.Context, orderID int64) error {
+func (s *service) Pay(ctx context.Context, orderID int64) error {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.pay")
 	span.SetTag("component", "orderservice")
 
@@ -34,7 +34,7 @@ func (s *oService) Pay(ctx context.Context, orderID int64) error {
 		return fmt.Errorf("Ошибка возвращение резервов товарам - %w", err)
 	}
 
-	err = s.orderStore.SetStatus(ctx, order.ID, model.OrderStatusPayed)
+	err = s.orderStore.SetStatus(ctx, order.ID, order.User, model.OrderStatusPayed)
 	if err != nil {
 		span.SetTag("error", true)
 		s.logger.Debugf(ctx, "OrderService.Pay: Ошибка смены статуса заказа - %v", err)

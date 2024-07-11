@@ -9,7 +9,7 @@ import (
 )
 
 // DelItem удаление итема пользователя через сервис - обращение к сервису хранения.
-func (s *cService) DelItem(ctx context.Context, item *model.DelItem) error {
+func (s *service) DelItem(ctx context.Context, item *model.DelItem) error {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.cart.del_item")
 	span.SetTag("component", "cart")
 	defer span.End()

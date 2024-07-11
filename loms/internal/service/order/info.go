@@ -9,7 +9,7 @@ import (
 )
 
 // Info возвращает информацию о заказе.
-func (s *oService) Info(ctx context.Context, orderID int64) (*model.Order, error) {
+func (s *service) Info(ctx context.Context, orderID int64) (*model.Order, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.info")
 	span.SetTag("component", "orderservice")
 

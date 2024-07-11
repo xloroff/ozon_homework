@@ -10,7 +10,7 @@ import (
 )
 
 // Cancel отменяет заказ, снимает резервы и меняет статус.
-func (s *oService) Cancel(ctx context.Context, orderID int64) error {
+func (s *service) Cancel(ctx context.Context, orderID int64) error {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.cancel")
 	span.SetTag("component", "orderservice")
 
@@ -47,7 +47,7 @@ func (s *oService) Cancel(ctx context.Context, orderID int64) error {
 		return fmt.Errorf("Ошибка возвращение резервов товарам - %w", err)
 	}
 
-	err = s.orderStore.SetStatus(ctx, orderID, model.OrderStatusCancelled)
+	err = s.orderStore.SetStatus(ctx, orderID, orderStorage.User, model.OrderStatusCancelled)
 	if err != nil {
 		span.SetTag("error", true)
 		s.logger.Debugf(ctx, "OrderService.Cancel: Ошибка смены статуса заказа - %v", err)

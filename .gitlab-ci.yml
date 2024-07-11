@@ -11,6 +11,8 @@ linter:
   script:
     - make lint -C cart
     - make lint -C loms
+    - make lint -C e2e
+    - make lint -C notifier
 
 cover_cart:
   stage: coverage
@@ -78,30 +80,42 @@ build_image_loms:
       --build-arg LOMSHTTP_TOPORT=8084
       -t loms:production_$(echo "$CI_COMMIT_BRANCH" | awk -F'/' '{print $2}') .
 
+build_image_notifier:
+  stage: build
+  script:
+    - docker build -f ./notifier/Dockerfile --target production
+      -t notifier:production_$(echo "$CI_COMMIT_BRANCH" | awk -F'/' '{print $2}') .
+
 etoetest:
   stage: test
   image: golang:1.22.3-bookworm
   script:
-    - apt update
-    - apt install -y docker-compose
-    - make restart-docker
+  # Закоменченные строки "<--" решают специфические ошибки работы runner в CI/CD Gitlab Ozon (но замедляют работу runner-a из-за чистки Docker)
+  # Используйте локальный runner (и не мучайтесь), а если не хотите то строки "<-!!" для вас
+  #  - apt update #<-!!
+  #  - apt install -y docker-compose #<-!!
+  #  - make restart-docker #<-!!
     - make stop
-    - docker system prune -a --force
-    - make clear-volume
+    - docker system prune -a --force #<--
+  #  - docker network prune -f #<--
+  #  - make clear-volume #<--
     - make e2e-test
     - make stop
-    - make restart-docker
+  #  - make restart-docker  #<--
 
 integrationtest:
   stage: integrationtest
   image: golang:1.22.3-bookworm
   script:
-    - apt update
-    - apt install -y docker-compose
-    - make restart-docker
+  # Закоменченные строки "<--" решают специфические ошибки работы runner в CI/CD Gitlab Ozon (но замедляют работу runner-a из-за чистки Docker)
+  # Используйте локальный runner (и не мучайтесь), а если не хотите то строки "<-!!" для вас
+  #  - apt update #<-!!
+  #  - apt install -y docker-compose #<-!!
+  #  - make restart-docker #<-!!
     - make stop
-    - docker system prune -a --force
-    - make clear-volume
+    - docker system prune -a --force #<--
+  #  - docker network prune -f #<--
+  #  - make clear-volume #<--
     - make i-test
     - make stop
-    - make restart-docker
+  #  - make restart-docker  #<--

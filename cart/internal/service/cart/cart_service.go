@@ -18,7 +18,7 @@ type Service interface {
 	Checkout(ctx context.Context, userID int64) (*model.OrderCart, error)
 }
 
-type cService struct {
+type service struct {
 	productCli ProductClient
 	cartStore  memorystore.Storage
 	lomsCli    lomscli.LomsService
@@ -32,7 +32,7 @@ type ProductClient interface {
 
 // NewService создает новый сервис включая в него клиентов и хранилище.
 func NewService(l logger.Logger, product ProductClient, loms lomscli.LomsService, store memorystore.Storage) Service {
-	return &cService{
+	return &service{
 		productCli: product,
 		lomsCli:    loms,
 		cartStore:  store,

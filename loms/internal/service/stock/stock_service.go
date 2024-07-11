@@ -12,7 +12,7 @@ type Service interface {
 	Info(ctx context.Context, sku int64) (uint16, error)
 }
 
-type sService struct {
+type service struct {
 	ctx        context.Context
 	stockStore stockstore.Storage
 	logger     logger.Logger
@@ -20,7 +20,7 @@ type sService struct {
 
 // NewService создает новый сервис LOMS с хранилищами резервов и хранилищем заказов.
 func NewService(ctx context.Context, l logger.Logger, ss stockstore.Storage) Service {
-	return &sService{
+	return &service{
 		ctx:        ctx,
 		stockStore: ss,
 		logger:     l,

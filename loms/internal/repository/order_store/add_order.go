@@ -2,10 +2,12 @@ package orderstore
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
+
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/metrics"
@@ -38,6 +40,7 @@ func (ms *orderStorage) AddOrder(ctx context.Context, user int64, items model.Or
 
 	var orderID int64
 
+	// Важно помнить, что открытая транзакция тут больше антипаттерн в outbox и применена она исключительно потому, что это позволительно в рамках задания, а так же чтобы не усложнять логику inbox на стороне сервиса notifier.
 	err := dbWrPool.BeginFuncWithTx(ctx, func(tx pgx.Tx) error {
 		q := sqlc.New(dbWrPool).WithTx(tx)
 
@@ -49,12 +52,24 @@ func (ms *orderStorage) AddOrder(ctx context.Context, user int64, items model.Or
 			return fmt.Errorf("Ошибка добавлени заказа (строки в таблицу order) - %w", err)
 		}
 
+		msg, err := createMessage(ctx, orderID, user, model.OrderStatusNew)
+		if err != nil {
+			span.SetTag("error", true)
+			return fmt.Errorf("Ошибка формирования сообщения в outbox для отправки в брокер - %w", err)
+		}
+
 		for _, item := range items {
 			err = q.AddOrderItem(ctx, sqlc.AddOrderItemParams{OrderID: orderID, Sku: item.Sku, Count: int32(item.Count)})
 			if err != nil {
 				span.SetTag("error", true)
 				return fmt.Errorf("Ошибка добавлени заказа (строки в таблицу order_item) %d - %w", item.Sku, err)
 			}
+		}
+
+		err = ms.outboxstore.AddMessage(ctx, tx, msg)
+		if err != nil {
+			span.SetTag("error", true)
+			return fmt.Errorf("Ошибка добавлени заказа в outbox для отправки в брокер - %w", err)
 		}
 
 		return nil
@@ -79,4 +94,24 @@ func (ms *orderStorage) AddOrder(ctx context.Context, user int64, items model.Or
 	)
 
 	return orderID, nil
+}
+
+func createMessage(_ context.Context, orderID, user int64, status string) (*model.Outbox, error) {
+	data := &model.Order{
+		ID:     orderID,
+		User:   user,
+		Status: status,
+	}
+
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return nil, fmt.Errorf("Ошибка сериализации данных для отправки в брокер - %w", err)
+	}
+
+	outbox := &model.Outbox{
+		EntityID: fmt.Sprintf("%d", orderID),
+		Payload:  string(payload),
+	}
+
+	return outbox, nil
 }

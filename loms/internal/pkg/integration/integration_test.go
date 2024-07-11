@@ -12,6 +12,7 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/order_store"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/outbox_store"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/stock_store"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/db"
 )
@@ -27,11 +28,12 @@ const (
 
 type Suite struct {
 	suite.Suite
-	ctx          context.Context
-	dbClient     db.ClientBD
-	logger       logger.Logger
-	stockStorage stockstore.Storage
-	orderStorage orderstore.Storage
+	ctx           context.Context
+	dbClient      db.ClientBD
+	logger        logger.Logger
+	stockStorage  stockstore.Storage
+	orderStorage  orderstore.Storage
+	outboxStorage outboxstore.Storage
 }
 
 func TestIntegrationTest(t *testing.T) {
@@ -66,7 +68,12 @@ func (s *Suite) SetupSuite() {
 		s.Require().NoError(err, "Ошибка создания хранилища резервов")
 	}
 
-	s.orderStorage, err = orderstore.NewOrderStorage(s.ctx, s.logger, s.dbClient)
+	s.outboxStorage, err = outboxstore.NewOutboxStorage(s.ctx, s.logger, s.dbClient, 10)
+	if err != nil {
+		s.Require().NoError(err, "Ошибка создания хранилища outbox")
+	}
+
+	s.orderStorage, err = orderstore.NewOrderStorage(s.ctx, s.logger, s.dbClient, s.outboxStorage)
 	if err != nil {
 		s.Require().NoError(err, "Ошибка создания хранилища заказов")
 	}
@@ -198,7 +205,7 @@ func (s *Suite) TestOrdersChangeStatusOrderStorage() {
 	s.Require().GreaterOrEqual(orderID, int64(1), "Не совпал ID созданного заказа")
 
 	// Изменяем статусу заказа
-	err = s.orderStorage.SetStatus(s.ctx, orderID, model.OrderStatusAwaitingPayment)
+	err = s.orderStorage.SetStatus(s.ctx, orderID, user2, model.OrderStatusAwaitingPayment)
 	s.Require().NoError(err, "Ошибка при изменении статуса заказа")
 
 	// Получаем созданный заказ

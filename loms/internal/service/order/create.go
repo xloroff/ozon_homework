@@ -9,7 +9,7 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/tracer"
 )
 
-func (s *oService) Create(ctx context.Context, user int64, items model.AllNeedReserve) (int64, error) {
+func (s *service) Create(ctx context.Context, user int64, items model.AllNeedReserve) (int64, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.create")
 	span.SetTag("component", "orderservice")
 
@@ -43,7 +43,7 @@ func (s *oService) Create(ctx context.Context, user int64, items model.AllNeedRe
 		status = model.OrderStatusFailed
 	}
 
-	err = s.orderStore.SetStatus(ctx, orderID, status)
+	err = s.orderStore.SetStatus(ctx, orderID, user, status)
 	if err != nil {
 		span.SetTag("error", true)
 		s.logger.Debugf(ctx, "OrderService.Create: Ошибка смены статуса заказа - %v", err)

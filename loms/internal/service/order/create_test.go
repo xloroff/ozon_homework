@@ -124,7 +124,7 @@ func TestCreateTable(t *testing.T) {
 			Expect(minimock.AnyContext, *tt.items).Return(tt.reserveStockErr)
 
 		fieldsForTableTest.orderStorageMock.SetStatusMock.
-			Expect(minimock.AnyContext, tt.orderID, tt.status).Return(tt.setStatusErr)
+			Expect(minimock.AnyContext, tt.orderID, tt.userID, tt.status).Return(tt.setStatusErr)
 
 		t.Run(tt.name, func(t *testing.T) {
 			orderID, err := servO.Create(ctx, tt.userID, *tt.items)

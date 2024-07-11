@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/gookit/validate"
@@ -13,6 +14,7 @@ type ApplicationParameters struct {
 	*AppSettings
 	*BDConSettings
 	*JaegerSettings
+	*KafkaSettings
 }
 
 // AppSettings отвечает за настройки приложения.
@@ -37,6 +39,17 @@ type JaegerSettings struct {
 	JaegerPort string `mapstructure:"JAEGER_PORT" validate:"required|min_len:2" message:"Указание порта для отправки трейсов \"JAEGER_PORT\" обязательно для передачи через параметры окружения"`
 }
 
+// KafkaSettings отвечает за настройки подключения к Kafka.
+type KafkaSettings struct {
+	KafkaAddress      string `validate:"required|min_len:4"`
+	OrderTopic        string `validate:"required|min_len:1"`
+	KafkaSenderPeriod int    `mapstructure:"KAFKA_WAIT_TIMEOUT"  validate:"int|min:1|max:60" message:"Период ожидания доставки сообщения \"KAFKA_WAIT_TIMEOUT\" не стоит устанавливать более 60 секунд"`
+	KafkaRetryCount   int    `mapstructure:"KAFKA_RETRY_COUNT" validate:"required|int|min:1|max:10" message:"Количество попыток отправки сообщения\"KAFKA_RETRY_COUNT\" обязательно для передачи"`
+	KafkaConnCount    int    `mapstructure:"KAFKA_MAX_CONN" validate:"required|int|min:1|max:10" message:"Количество подключений к Kafka \"KAFKA_MAX_CONN\" обязательно для передачи"`
+	KafkaBackoffTime  int    `mapstructure:"KAFKA_BACKOFF_TIME"  validate:"int|min:1|max:600" message:"Период ожидания между попытками отправки (указывается в милисекундах), \"KAFKA_BACKOFF_TIME\" не стоит устанавливать более 6600 миллисекун"`
+	BlockTime         int    `mapstructure:"BLOCK_TIME" validate:"required|int|min:1|max:360" message:"Время блокировки сообщений при отправке в брокер \"BLOCK_TIME\" обязательно для передачи. Не более 360 секунд"`
+}
+
 // LoadAPIConfig грузит настройки для API.
 func LoadAPIConfig() (*ApplicationParameters, error) {
 	appSettings, err := loadAppConfig()
@@ -54,10 +67,16 @@ func LoadAPIConfig() (*ApplicationParameters, error) {
 		return nil, err
 	}
 
+	kafkaSettings, err := loadKafkaConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ApplicationParameters{}
 	config.AppSettings = appSettings
 	config.BDConSettings = bdSettings
 	config.JaegerSettings = jaegerSettings
+	config.KafkaSettings = kafkaSettings
 
 	return config, nil
 }
@@ -123,6 +142,52 @@ func loadJaegerConfig() (*JaegerSettings, error) {
 	if !appJaegerValidate.Validate() {
 		err := appJaegerValidate.Errors
 		return nil, fmt.Errorf("LoadJaegerConfig: ошибка валидации настроек связи c Jaeger - %w", err)
+	}
+
+	return config, nil
+}
+
+// loadKafkaConfig грузит настройки подключения к Kafka.
+func loadKafkaConfig() (*KafkaSettings, error) {
+	viper.AddConfigPath(configDirPath)
+	viper.SetConfigType(configType)
+	viper.AutomaticEnv()
+
+	config := &KafkaSettings{}
+
+	h := os.Getenv("KAFKA_HOST")
+	p := os.Getenv("KAFKA_PORT")
+	t := os.Getenv("TOPIC_NAME")
+
+	if h == "" || p == "" {
+		return nil, fmt.Errorf("Ошибка получения данных подключения к Kafka - хост \"%v\", порт \"%v\"", h, p)
+	}
+
+	urlString := fmt.Sprintf("%v:%v", h, p)
+
+	_, err := url.ParseRequestURI(urlString)
+	if err != nil {
+		return nil, fmt.Errorf("Ошибка форматирования данных подключения к Kafka - %w", err)
+	}
+
+	err = viper.ReadInConfig()
+	if err != nil {
+		return nil, fmt.Errorf("loadKafkaConfig: ошибка чтения конфигурации из файла - %w", err)
+	}
+
+	err = viper.Unmarshal(&config)
+	if err != nil {
+		return nil, fmt.Errorf("loadKafkaConfig: ошибка преобразования переменных из конфигурации - %w", err)
+	}
+
+	config.KafkaAddress = urlString
+	config.OrderTopic = t
+
+	// Валидируем конфигурацию.
+	kafkaSettingValidate := validate.Struct(config)
+	if !kafkaSettingValidate.Validate() {
+		err = kafkaSettingValidate.Errors
+		return nil, fmt.Errorf("loadKafkaConfig: ошибка валидации настроек приложения - %w", err)
 	}
 
 	return config, nil
