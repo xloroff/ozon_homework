@@ -2,7 +2,7 @@
 
 package mock
 
-//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/internal/service/cart.ProductClient -o productclient_mock.go -n ProductClientMock -p mock
+//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/service/cart.ProductClient -o productclient_mock.go -n ProductClientMock -p mock
 
 import (
 	"context"
@@ -11,7 +11,7 @@ import (
 	mm_time "time"
 
 	"github.com/gojuno/minimock/v3"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // ProductClientMock implements cart.ProductClient

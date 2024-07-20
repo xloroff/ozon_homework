@@ -3,9 +3,10 @@ package cart
 import (
 	"context"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/repository/memory_store"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/repository/memory_store"
 )
 
 // Service заведем как сервис под апи.
@@ -14,11 +15,13 @@ type Service interface {
 	GetAllUserItems(ctx context.Context, userID int64) (*model.FullUserCart, error)
 	DelItem(ctx context.Context, item *model.DelItem) error
 	DelCart(ctx context.Context, userID int64) error
+	Checkout(ctx context.Context, userID int64) (*model.OrderCart, error)
 }
 
 type cService struct {
 	productCli ProductClient
 	cartStore  memorystore.Storage
+	lomsCli    lomscli.LomsService
 	logger     logger.ILog
 }
 
@@ -28,9 +31,10 @@ type ProductClient interface {
 }
 
 // NewService создает новый сервис включая в него клиентов и хранилище.
-func NewService(l logger.ILog, product ProductClient, store memorystore.Storage) Service {
+func NewService(l logger.ILog, product ProductClient, loms lomscli.LomsService, store memorystore.Storage) Service {
 	return &cService{
 		productCli: product,
+		lomsCli:    loms,
 		cartStore:  store,
 		logger:     l,
 	}

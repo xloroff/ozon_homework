@@ -6,8 +6,8 @@ import (
 
 	"github.com/go-resty/resty/v2"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/config"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/config"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // responseChecker проверяем ответ от сервиса продуктов и чекаем.

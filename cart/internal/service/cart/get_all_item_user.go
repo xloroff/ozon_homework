@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // GetAllUserItems получение корзины пользователя через сервис, вызов клиента для связи с сервисом продуктов и обращение к сервису хранения.

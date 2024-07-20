@@ -7,9 +7,9 @@ import (
 	"github.com/gojuno/minimock/v3"
 	"github.com/stretchr/testify/require"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/service/cart/mock"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/service/cart/mock"
 )
 
 func TestDelItemTable(t *testing.T) {
@@ -23,6 +23,13 @@ func TestDelItemTable(t *testing.T) {
 		skuID   int64
 		wantErr error
 		memdel  bool
+	}
+
+	type fields struct {
+		productCliMock *mock.ProductClientMock
+		storageMock    *mock.StorageMock
+		lomsCliMock    *mock.LomsClientMock
+		loggerMock     logger.ILog
 	}
 
 	testData := []data{
@@ -50,11 +57,15 @@ func TestDelItemTable(t *testing.T) {
 	}
 
 	ctrl := minimock.NewController(t)
-	productCliMock := mock.NewProductClientMock(ctrl)
-	storageMock := mock.NewStorageMock(ctrl)
-	l := logger.InitializeLogger("", 1)
 
-	servM := NewService(l, productCliMock, storageMock)
+	fieldsForTableTest := fields{
+		productCliMock: mock.NewProductClientMock(ctrl),
+		storageMock:    mock.NewStorageMock(ctrl),
+		loggerMock:     logger.InitializeLogger("", 1),
+		lomsCliMock:    mock.NewLomsClientMock(ctrl),
+	}
+
+	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
 
 	for _, tt := range testData {
 		t.Run(tt.name, func(t *testing.T) {
@@ -62,7 +73,7 @@ func TestDelItemTable(t *testing.T) {
 			item.SkuID = tt.skuID
 			item.UserID = tt.userID
 
-			storageMock.DelItemMock.
+			fieldsForTableTest.storageMock.DelItemMock.
 				When(ctx, &item).
 				Then(tt.memdel)
 

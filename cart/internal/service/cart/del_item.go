@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
 // DelItem удаление итема пользователя через сервис - обращение к сервису хранения.

@@ -7,21 +7,23 @@ import (
 	"github.com/gorilla/mux"
 	"go.uber.org/zap"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger"
 )
 
 // Logging включаем логирование по всем входящим запросам.
 func Logging(ctx context.Context, l logger.ILog) mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			executeDebug := []zap.Field{
-				zap.String("ip", ReadUserIP(r)),
-				zap.String("content_type", r.Header.Get("Content-Type")),
-				// TODO добавить еще что-то полезное, типа таймингов и пр. но как понимаю рано, будет на сл. ДЗ.
-			}
+			if r.Method != http.MethodHead {
+				executeDebug := []zap.Field{
+					zap.String("ip", ReadUserIP(r)),
+					zap.String("content_type", r.Header.Get("Content-Type")),
+					// TODO добавить еще что-то полезное, типа таймингов и пр. но как понимаю рано, будет на сл. ДЗ.
+				}
 
-			ctx = logger.Set(ctx, executeDebug)
-			l.Debugf(ctx, "service_access")
+				ctx = logger.Set(ctx, executeDebug)
+				l.Debugf(ctx, "service_access")
+			}
 
 			h.ServeHTTP(w, r)
 		})

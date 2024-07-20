@@ -4,13 +4,13 @@ import (
 	"context"
 	"log"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/app"
+	cartapp "gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/app"
 )
 
 func main() {
 	ctx := context.Background()
 	// Запуск приложения.
-	if err := app.NewApp(ctx).Run(); err != nil {
-		log.Fatalf("Неудалось запустить приложение: %v", err)
+	if err := cartapp.NewApp(ctx).Run(); err != nil {
+		log.Panicf("Неудалось запустить приложение Cart - %v", err)
 	}
 }

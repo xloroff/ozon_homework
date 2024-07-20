@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/gookit/validate"
 	"github.com/spf13/viper"
@@ -11,6 +12,7 @@ import (
 type ApplicationParameters struct {
 	*AppSettings
 	*ProductServiceSettings
+	*LomsServiceSettings
 }
 
 // AppSettings отвечает за настройки приложения.
@@ -28,6 +30,12 @@ type ProductServiceSettings struct {
 	ProductServiceRetr  int    `mapstructure:"PRODUCT_SERVICE_RETRIES" validate:"required|int|min:1|max:20" message:"Число попыток установки связи с сервисом продуктов \"PRODUCT_SERVICE_RETRIES\" должно быть от 1 до 20"`
 }
 
+// LomsServiceSettings отвечает за настройки связи с сервисом loms.
+type LomsServiceSettings struct {
+	ProductServiceHost string `mapstructure:"LOMS_HOST" validate:"required" message:"Адрес сервиса заказов \"LOMS_HOST\" необходимо указать как доменное имя"`
+	ProductServicePort int    `mapstructure:"LOMS_PORT" validate:"required|int|min:80" message:"Указание порта \"LOMS_PORT\" на котором будет запущен сервис - обязательно"`
+}
+
 // LoadAPIConfig грузит настройки для API.
 func LoadAPIConfig() (*ApplicationParameters, error) {
 	appSettings, err := loadAppConfig()
@@ -40,9 +48,15 @@ func LoadAPIConfig() (*ApplicationParameters, error) {
 		return nil, err
 	}
 
+	lomsSettings, err := loadLomsSettings()
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ApplicationParameters{}
 	config.AppSettings = appSettings
 	config.ProductServiceSettings = productSettings
+	config.LomsServiceSettings = lomsSettings
 
 	return config, nil
 }
@@ -51,7 +65,7 @@ func loadAppConfig() (*AppSettings, error) {
 	// Файлики конфигов.
 	viper.AddConfigPath(configDirPath)
 	viper.SetConfigType(configType)
-	viper.SetConfigName(appConfigName)
+	viper.SetConfigName(os.Getenv("APP_CONFIG_NAME"))
 
 	viper.AutomaticEnv()
 
@@ -82,7 +96,7 @@ func loadProductSettings() (*ProductServiceSettings, error) {
 	// Файлики конфигов.
 	viper.AddConfigPath(configDirPath)
 	viper.SetConfigType(configType)
-	viper.SetConfigName(appConfigName)
+	viper.SetConfigName(os.Getenv("APP_CONFIG_NAME"))
 
 	viper.AutomaticEnv()
 
@@ -104,6 +118,37 @@ func loadProductSettings() (*ProductServiceSettings, error) {
 	if !appSettingValidate.Validate() {
 		err = appSettingValidate.Errors
 		return nil, fmt.Errorf("LoadAPIConfig: ошибка валидации параметров связи с сервисом продуктов - %w", err)
+	}
+
+	return config, nil
+}
+
+func loadLomsSettings() (*LomsServiceSettings, error) {
+	// Файлики конфигов.
+	viper.AddConfigPath(configDirPath)
+	viper.SetConfigType(configType)
+	viper.SetConfigName(os.Getenv("APP_CONFIG_NAME"))
+
+	viper.AutomaticEnv()
+
+	config := &LomsServiceSettings{}
+
+	// Читаем данные и раскидываем.
+	err := viper.ReadInConfig()
+	if err != nil {
+		return nil, fmt.Errorf("LoadAPIConfig: ошибка чтения конфигурации из файла - %w", err)
+	}
+
+	err = viper.Unmarshal(&config)
+	if err != nil {
+		return nil, fmt.Errorf("LoadAPIConfig: ошибка преобразования переменных из конфигурации - %w", err)
+	}
+
+	// Валидируем конфигурацию.
+	appSettingValidate := validate.Struct(config)
+	if !appSettingValidate.Validate() {
+		err = appSettingValidate.Errors
+		return nil, fmt.Errorf("LoadAPIConfig: ошибка валидации параметров связи с сервисом заказов - %w", err)
 	}
 
 	return config, nil
