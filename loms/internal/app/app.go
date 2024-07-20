@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"syscall"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/config"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/api/orderapi"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/api/stockapi"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/closer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/grpc_server"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/http_server"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
@@ -42,11 +42,6 @@ func NewApp(ctx context.Context) Application {
 
 // Run запуск.
 func (a *app) Run() error {
-	// Канал для сигналов завершения.
-	sigChan := make(chan os.Signal, 1)
-
-	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-
 	cnfg, err := config.LoadAPIConfig()
 	if err != nil {
 		return fmt.Errorf("Ошибка получения параметров из конфигурационного файла - %w", err)
@@ -55,25 +50,44 @@ func (a *app) Run() error {
 	// Стартуем логгер.
 	l := logger.InitializeLogger(cnfg.LogLevel, cnfg.LogType)
 
+	clsr := closer.NewCloser(l, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	defer clsr.Wait()
+
+	clsr.Add(func() error {
+		return l.Close()
+	})
+
 	// Запускаем миграции перед стартом сервиса.
 	err = db.MigrationPool(a.ctx, l, cnfg.MigrationFolder, cnfg.BDMaster1ConString)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка миграции БД - %w", err)
 	}
 
 	// Стартуем репозитории/связь с БД и хранилища.
 	dbClient, err := db.NewClient(a.ctx, cnfg.BDMaster1ConString, cnfg.BDSync1ConString)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка создания клиента БД - %w", err)
 	}
 
+	clsr.Add(func() error {
+		return dbClient.Close()
+	})
+
 	ordStrg, err := orderstore.NewOrderStorage(a.ctx, l, dbClient)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка создания хранилища заказов - %w", err)
 	}
 
 	resStg, err := stockstore.NewReserveStorage(a.ctx, l, dbClient)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка создания хранилища остатков - %w", err)
 	}
 
@@ -91,39 +105,43 @@ func (a *app) Run() error {
 	go func() {
 		err = servGRPC.Start()
 		if err != nil {
+			clsr.CloseAll()
+
 			l.Errorf(a.ctx, "Ошибка запуска GRPC-сервера - %v", err)
 			a.cancel()
 
 			return
 		}
-
-		<-sigChan
 	}()
+
+	clsr.Add(func() error {
+		return servGRPC.Stop()
+	})
 
 	servHTTP, err := httpserver.NewServer(a.ctx, l, cnfg)
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка создания экземпляра HTTP-сервера - %w", err)
 	}
 
 	err = servHTTP.RegisterAPI()
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка регистрации прикладов LOMS в Proxy-GRPC - %w", err)
 	}
 
 	err = servHTTP.Start()
 	if err != nil {
+		clsr.CloseAll()
+
 		return fmt.Errorf("Ошибка запуска HTTP-сервера - %w", err)
 	}
 
-	go func() {
-		<-sigChan
-		l.Warnf(a.ctx, "Получен сигнал завершения, остановка приложения произведена...")
-
-		defer l.Close()
-		defer a.cancel()
-	}()
-
-	<-a.ctx.Done()
+	clsr.Add(func() error {
+		return servHTTP.Stop(cnfg.GracefulTimeout)
+	})
 
 	return nil
 }

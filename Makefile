@@ -23,6 +23,9 @@ e2e-test: run-all run-e2e test stop clear-volume
 
 i-test: run-all-test integration-test stop clear-volume
 
+restart-docker:
+	service docker restart || true
+
 clear-volume:
 	docker volume rm $$(docker volume ls -qf dangling=true) || true
 
@@ -30,6 +33,7 @@ integration-test:
 	docker exec apploms-test bash -c "go test -vet=off -v -race -count 1 -tags integration ./internal/pkg/integration/..."
 
 stop:
+	docker-compose down || true
 	docker-compose down --remove-orphans || true
 
 test:

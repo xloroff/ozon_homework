@@ -101,27 +101,33 @@ func TestCancelTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		orderStorageMock: mock.NewOrderStorageMock(ctrl),
-		stockStorageMock: mock.NewStockStorageMock(ctrl),
-		loggerMock:       logger.InitializeLogger("", 1),
-	}
-
-	servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
-
 	for _, tt := range testData {
-		fieldsForTableTest.orderStorageMock.GetOrderMock.
-			Expect(tt.orderID).Return(tt.orderStore, tt.getOrderErr)
+		fieldsForTableTest := fields{
+			orderStorageMock: mock.NewOrderStorageMock(ctrl),
+			stockStorageMock: mock.NewStockStorageMock(ctrl),
+			loggerMock:       logger.InitializeLogger("", 1),
+		}
 
-		delReserve := orderToReserve(tt.orderStore.Items)
-
-		fieldsForTableTest.stockStorageMock.CancelReserveMock.
-			Expect(delReserve).Return(tt.cancelReserveErr)
-
-		fieldsForTableTest.orderStorageMock.SetStatusMock.
-			Expect(tt.orderID, model.OrderStatusCancelled).Return(tt.setStatusErr)
+		servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
 
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			fieldsForTableTest.orderStorageMock.GetOrderMock.
+				When(tt.orderID).Then(tt.orderStore, tt.getOrderErr)
+
+			delReserve := orderToReserve(tt.orderStore.Items)
+
+			if len(tt.orderStore.Items) > 0 {
+				fieldsForTableTest.stockStorageMock.CancelReserveMock.
+					When(delReserve).Then(tt.cancelReserveErr)
+
+				if tt.cancelReserveErr == nil {
+					fieldsForTableTest.orderStorageMock.SetStatusMock.
+						When(tt.orderID, model.OrderStatusCancelled).Then(tt.setStatusErr)
+				}
+			}
+
 			err := servO.Cancel(tt.orderID)
 			if tt.wantErr != nil {
 				require.NotNil(t, err, "Должна быть ошибка")

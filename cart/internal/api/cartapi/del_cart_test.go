@@ -57,16 +57,19 @@ func TestDelCartTable(t *testing.T) {
 	}
 
 	ctrl := minimock.NewController(t)
-	servMock := mock.NewServiceMock(ctrl)
-	l := logger.InitializeLogger("", 1)
-
-	api := API{
-		cartService: servMock,
-		logger:      l,
-	}
 
 	for _, tt := range testData {
+		servMock := mock.NewServiceMock(ctrl)
+		l := logger.InitializeLogger("", 1)
+
+		api := API{
+			cartService: servMock,
+			logger:      l,
+		}
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			if !errors.Is(tt.errService, someError) {
 				servMock.DelCartMock.Expect(minimock.AnyContext, tt.userID).Return(tt.errService)
 			}

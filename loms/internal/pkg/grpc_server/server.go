@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net"
-	"os"
-	"os/signal"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -70,14 +68,7 @@ func (s *server) Start() error {
 
 	s.logger.Warn(s.ctx, "GRPC cервер запущен...")
 
-	// Обработка сигнала завершения сервера.
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
-	// Блокируем выполнение до получения сигнала.
-	<-c
-
-	return s.Stop()
+	return nil
 }
 
 // Stop остановка сервера.

@@ -78,23 +78,30 @@ func TestCheckoutTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		productCliMock: mock.NewProductClientMock(ctrl),
-		storageMock:    mock.NewStorageMock(ctrl),
-		loggerMock:     logger.InitializeLogger("", 1),
-		lomsCliMock:    mock.NewLomsClientMock(ctrl),
+	newService := func() (*fields, Service) {
+		fieldsForTableTest := &fields{
+			productCliMock: mock.NewProductClientMock(ctrl),
+			storageMock:    mock.NewStorageMock(ctrl),
+			loggerMock:     logger.InitializeLogger("", 1),
+			lomsCliMock:    mock.NewLomsClientMock(ctrl),
+		}
+		servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
+
+		return fieldsForTableTest, servM
 	}
 
-	servM := NewService(fieldsForTableTest.loggerMock, fieldsForTableTest.productCliMock, fieldsForTableTest.lomsCliMock, fieldsForTableTest.storageMock)
-
 	for _, tt := range testData {
+		f, s := newService()
+
 		t.Run(tt.name, func(t *testing.T) {
-			fieldsForTableTest.storageMock.GetAllUserItemsMock.
+			t.Parallel()
+
+			f.storageMock.GetAllUserItemsMock.
 				When(ctx, tt.userID).
 				Then(tt.cart, tt.wantErr)
 
 			if tt.order != nil {
-				fieldsForTableTest.lomsCliMock.AddOrderMock.
+				f.lomsCliMock.AddOrderMock.
 					When(tt.userID, tt.cart).
 					Then(1, tt.lomsErr)
 
@@ -102,12 +109,12 @@ func TestCheckoutTable(t *testing.T) {
 			}
 
 			if tt.lomsErr == nil && tt.wantErr == nil {
-				fieldsForTableTest.storageMock.DelCartMock.
+				f.storageMock.DelCartMock.
 					When(ctx, tt.userID).
 					Then(nil)
 			}
 
-			order, err := servM.Checkout(ctx, tt.userID)
+			order, err := s.Checkout(ctx, tt.userID)
 			require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)
 
 			if tt.lomsErr == nil {

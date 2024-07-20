@@ -102,27 +102,33 @@ func TestPayTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		orderStorageMock: mock.NewOrderStorageMock(ctrl),
-		stockStorageMock: mock.NewStockStorageMock(ctrl),
-		loggerMock:       logger.InitializeLogger("", 1),
-	}
-
-	servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
-
 	for _, tt := range testData {
-		fieldsForTableTest.orderStorageMock.GetOrderMock.
-			Expect(tt.orderID).Return(tt.orderStore, tt.getOrderErr)
+		fieldsForTableTest := fields{
+			orderStorageMock: mock.NewOrderStorageMock(ctrl),
+			stockStorageMock: mock.NewStockStorageMock(ctrl),
+			loggerMock:       logger.InitializeLogger("", 1),
+		}
 
-		delReserve := orderToReserve(tt.orderStore.Items)
-
-		fieldsForTableTest.stockStorageMock.DelItemFromReserveMock.
-			Expect(delReserve).Return(tt.delItemErr)
-
-		fieldsForTableTest.orderStorageMock.SetStatusMock.
-			Expect(tt.orderID, model.OrderStatusPayed).Return(tt.setStatusErr)
+		servO := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.orderStorageMock, fieldsForTableTest.stockStorageMock)
 
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			fieldsForTableTest.orderStorageMock.GetOrderMock.
+				Expect(tt.orderID).Return(tt.orderStore, tt.getOrderErr)
+
+			delReserve := orderToReserve(tt.orderStore.Items)
+
+			if len(tt.orderStore.Items) > 0 {
+				fieldsForTableTest.stockStorageMock.DelItemFromReserveMock.
+					Expect(delReserve).Return(tt.delItemErr)
+
+				if tt.delItemErr == nil {
+					fieldsForTableTest.orderStorageMock.SetStatusMock.
+						Expect(tt.orderID, model.OrderStatusPayed).Return(tt.setStatusErr)
+				}
+			}
+
 			err := servO.Pay(tt.orderID)
 			if tt.wantErr != nil {
 				require.NotNil(t, err, "Должна быть ошибка")

@@ -44,15 +44,17 @@ func TestInfoTable(t *testing.T) {
 
 	ctrl := minimock.NewController(t)
 
-	fieldsForTableTest := fields{
-		stockStorageMock: mock.NewStockStorageMock(ctrl),
-		loggerMock:       logger.InitializeLogger("", 1),
-	}
-
-	servS := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.stockStorageMock)
-
 	for _, tt := range testData {
+		fieldsForTableTest := fields{
+			stockStorageMock: mock.NewStockStorageMock(ctrl),
+			loggerMock:       logger.InitializeLogger("", 1),
+		}
+
+		servS := NewService(ctx, fieldsForTableTest.loggerMock, fieldsForTableTest.stockStorageMock)
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			fieldsForTableTest.stockStorageMock.GetAvailableForReserveMock.
 				When(tt.skuID).
 				Then(tt.count, tt.wantErr)
