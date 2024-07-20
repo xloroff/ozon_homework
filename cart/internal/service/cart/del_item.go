@@ -2,21 +2,19 @@ package cart
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model/v1"
-	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/internal/model"
 )
 
 // DelItem удаление итема пользователя через сервис - обращение к сервису хранения.
-func (s *cService) DelItem(ctx context.Context, item *v1.DelItem) error {
-	logger.Info(ctx, fmt.Sprintf("cartService.DelItem: начинаю удаление продукта userId: %d, skuID: %d", item.UserID, item.SkuID))
-	defer logger.Info(ctx, fmt.Sprintf("cartService.DelItem: закончил удаление продукта userId: %d, skuID: %d", item.UserID, item.SkuID))
+func (s *cService) DelItem(ctx context.Context, item *model.DelItem) error {
+	s.logger.Info(ctx, fmt.Sprintf("cartService.DelItem: начинаю удаление продукта userId: %d, skuID: %d", item.UserID, item.SkuID))
+	defer s.logger.Info(ctx, fmt.Sprintf("cartService.DelItem: закончил удаление продукта userId: %d, skuID: %d", item.UserID, item.SkuID))
 
 	if !s.cartStore.DelItem(ctx, item) {
-		logger.Errorf(ctx, "cartService.DelItem: ошибка удаления продукта %v - %w", item.SkuID, errors.New("Неизвестнаяя ошибка"))
-		return fmt.Errorf("Ошибка удаления продукта  %v - %w", item.SkuID, "Неизвестнаяя ошибка")
+		s.logger.Errorf(ctx, "cartService.DelItem: ошибка удаления продукта %v - %v", item.SkuID, model.ErrUnknownError)
+		return fmt.Errorf("Ошибка удаления продукта  %v - %w", item.SkuID, model.ErrUnknownError)
 	}
 
 	return nil

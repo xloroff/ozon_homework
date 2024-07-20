@@ -1,17 +1,12 @@
 package config
 
 const (
-	// ConfigDirPath путь до папки хранящей конфигурации.
-	ConfigDirPath = "../config"
-	// ConfigType тип разметки файлов конфигурации "json", "toml", "yaml", "yml", "env".
-	ConfigType = "env"
-	// AppConfigName имя файлика конфигурации.
-	AppConfigName = "api.conf"
-)
-
-const (
-	// LogfileName имя файла с логами.
-	LogfileName = "/app.log"
+	// configDirPath путь до папки хранящей конфигурации.
+	configDirPath = "../config"
+	// configType тип разметки файлов конфигурации "json", "toml", "yaml", "yml", "env".
+	configType = "env"
+	// appConfigName имя файлика конфигурации.
+	appConfigName = "api.conf"
 )
 
 // HTTPCalmStatus Какая-то нестандартная ошибка которая может появляться при коммуникации с внешним сервисом продуктов.

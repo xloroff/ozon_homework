@@ -66,21 +66,21 @@ Content-Type: application/json
 ### delete whole sku from cart
 DELETE http://localhost:8082/user/31337/cart/1076963
 Content-Type: application/json
-### expected {} 200 OK; must delete item from cart
+### expected {} 204 OK; must delete item from cart
 
 ### delete whole cart
 DELETE http://localhost:8082/user/31337/cart/
 Content-Type: application/json
-### expected {} 200 OK; must delete cart
+### expected {} 204 OK; must delete cart
 
 # ========================================================================================
 
 ### get list of a cart
-GET http://localhost:8082/cart/31337/list/
+GET http://localhost:8082/user/31337/cart/31337/list/
 Content-Type: application/json
 ### expected {} 200 OK; must show cart
 
 ### get invalid list of cart
-GET http://localhost:8082/cart/0/list/
+GET http://localhost:8082/user/31337/cart/0/list/
 Content-Type: application/json
 ### 400 bad request

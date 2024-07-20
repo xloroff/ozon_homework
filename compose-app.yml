@@ -13,7 +13,7 @@ services:
     volumes:
       - goapp:/cart
       - appconfig:/config
-      - applogs:/log
+      - appcover:/cover
     ports:
       - ${GOAPP_FROMPORT}:${GOAPP_TOPORT}
     restart: unless-stopped
@@ -32,12 +32,12 @@ volumes:
       type: 'none'
       o: 'bind'
       device: "./config"
-  applogs:
+  appcover:
     driver: local
     driver_opts:
       type: 'none'
       o: 'bind'
-      device: "./log"
+      device: "./cover"
   goapp:
     driver: local
     driver_opts:
