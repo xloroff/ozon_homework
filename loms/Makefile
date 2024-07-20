@@ -171,3 +171,7 @@ PHONY: .merge-swagger
 	-o pkg/docs/swagger.json \
 	pkg/${ORDER_API_PROTO_PATH}/order.swagger.json \
 	pkg/${STOCK_API_PROTO_PATH}/stock.swagger.json
+
+PHONY: gensqlc
+gensqlc:
+	sqlc generate

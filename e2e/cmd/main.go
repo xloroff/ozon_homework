@@ -1,7 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"log"
+)
 
 func main() {
-	fmt.Println("Начинаю end-to-end тесты")
+	log.Println("Начинаю end-to-end тесты")
 }

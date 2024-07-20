@@ -1,3 +1,28 @@
+# Общие параметры для синхронизации нод БД
+x-sync-node1-params: &sync-node1-params
+   build:
+     context: .
+     target: ${STAGE}
+     dockerfile: Dockerfile-BD
+   healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U postgres"]
+       interval: 1s
+       timeout: 10s
+       retries: 10
+   networks:
+     - bd
+
+# Общие переменные окружения для синхронизации нод БД
+x-bd-env: &bd-env
+  POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME}
+  POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD}
+  POSTGRESQL_DATABASE: ${BD_NAME1}
+  POSTGRESQL_REPLICATION_USER: ${POSTGRESQL_REPLICATION_USER}
+  POSTGRESQL_REPLICATION_PASSWORD: ${POSTGRESQL_REPLICATION_PASSWORD}
+  POSTGRESQL_PGAUDIT_LOG: READ,WRITE
+  POSTGRESQL_LOG_HOSTNAME: "true"
+  POSTGRESQL_TIMEZONE: "Europe/Moscow"
+
 services:
 # Cервис для работы с корзиной пользователя Cart
   cart:
@@ -21,10 +46,10 @@ services:
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider http://localhost:${CARTAPP_TOPORT}/healthcheck || exit 1",
         ]
-      interval: 10s
+      interval: 3s
       timeout: 5s
-      retries: 3
-      start_period: 1m
+      retries: 300
+      start_period: 10m
     ports:
       - ${CARTAPP_TOPORT}:${CARTAPP_TOPORT}
     restart: always
@@ -45,22 +70,60 @@ services:
       dockerfile: loms/Dockerfile
     environment:
       - APP_CONFIG_NAME
+      - MIGRATION_FOLDER
+      - DB_NODE_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_NODE_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
+      - DB_SYNC_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_SYNC_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
     healthcheck:
       test:
         [
           "CMD-SHELL",
           "wget --no-verbose --tries=1 --spider http://localhost:${LOMSHTTP_TOPORT}/healthcheck || exit 1",
         ]
-      interval: 10s
+      interval: 3s
       timeout: 5s
-      retries: 3
-      start_period: 1m
+      retries: 100
+      start_period: 5m
+    depends_on:
+      bd-master-1:
+        condition: service_healthy
+      bd-sync-1:
+        condition: service_healthy
     ports:
       - ${LOMSAPP_FROMPORT}:${LOMSAPP_TOPORT}
       - ${LOMSHTTP_TOPORT}:${LOMSHTTP_TOPORT}
     restart: always
     networks:
       - loms
+      - bd
+
+  bd-master-1:
+    container_name: ${DB_NODE_1}-${STAGE}
+    image: ${DB_NODE_1}-${STAGE}
+    ports:
+      - ${DB_NODE_1_PORT}:${BD_TOPORT}
+    <<: *sync-node1-params
+    environment:
+      <<: *bd-env
+      POSTGRESQL_REPLICATION_MODE: "master"
+      POSTGRESQL_SYNCHRONOUS_COMMIT_MODE: "on"
+      POSTGRESQL_NUM_SYNCHRONOUS_REPLICAS: 1
+    volumes:
+      - bd-disk-1:/bitnami/postgresql
+
+  bd-sync-1:
+    container_name: ${DB_SYNC_1}-${STAGE}
+    image: ${DB_SYNC_1}-${STAGE}
+    ports:
+      - ${DB_SYNC_1_PORT}:${BD_TOPORT}
+    <<: *sync-node1-params
+    environment:
+      <<: *bd-env
+      POSTGRESQL_MASTER_HOST: ${DB_NODE_1}
+      POSTGRESQL_REPLICATION_MODE: "slave"
+      POSTGRESQL_MASTER_PORT_NUMBER: ${BD_TOPORT}
+    depends_on:
+      bd-master-1:
+        condition: service_healthy
 
   # Cервис для запуска e2e тестов
   e2e:
@@ -86,3 +149,8 @@ services:
 networks:
   loms:
     driver: bridge
+  bd:
+    driver: bridge
+
+volumes:
+  bd-disk-1:

@@ -1,0 +1,5 @@
+FROM bitnami/postgresql:latest AS development
+
+FROM bitnami/postgresql:latest AS production
+
+FROM bitnami/postgresql:latest AS test

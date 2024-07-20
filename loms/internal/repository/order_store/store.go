@@ -2,10 +2,10 @@ package orderstore
 
 import (
 	"context"
-	"sync"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/db"
 )
 
 // Storage имплементирует методы управления хранилищем памяти.
@@ -16,19 +16,16 @@ type Storage interface {
 }
 
 type orderStorage struct {
-	sync.RWMutex
 	ctx    context.Context
-	data   model.AllOrderItems
+	data   db.ClientBD
 	logger logger.ILog
 }
 
 // NewOrderStorage создает хранилище заказов.
-func NewOrderStorage(ctx context.Context, l logger.ILog) (Storage, error) {
-	memOrders := map[int64]*model.Order{}
-
+func NewOrderStorage(ctx context.Context, l logger.ILog, bdCli db.ClientBD) (Storage, error) {
 	return &orderStorage{
 		ctx:    ctx,
-		data:   memOrders,
+		data:   bdCli,
 		logger: l,
 	}, nil
 }

@@ -10,10 +10,20 @@ RUN apt-get update \
       protobuf-compiler
 RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 RUN go install github.com/gojuno/minimock/v3/cmd/minimock@latest
+RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 RUN go install github.com/cespare/reflex@latest
 EXPOSE ${LOMSAPP_TOPORT?lomsapp_toport_notset} ${LOMSHTTP_TOPORT?lomshttp_toport_notset}
 CMD reflex -r '(\.go$|go\.mod)' make run-all --start-service
 
+FROM golang:1.22.3 AS test
+WORKDIR /loms
+ARG LOMSAPP_TOPORT
+ARG LOMSHTTP_TOPORT
+COPY ./loms .
+RUN go mod download
+WORKDIR /loms
+ENTRYPOINT ["tail", "-f", "/dev/null"]
+CMD ["tail", "-f", "/dev/null"]
 
 FROM golang:1.22.3 AS builder
 ENV GOOS=linux
@@ -32,7 +42,7 @@ ARG LOMSHTTP_TOPORT
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /buildapp/loms /buildapp/loms
 COPY ./loms/config ./buildapp/config
-COPY ./loms/stock-data.json ./buildapp
+COPY ./loms/migrations ./buildapp/migrations
 EXPOSE ${LOMSAPP_TOPORT} ${LOMSHTTP_TOPORT}
 WORKDIR /buildapp
 CMD ./loms

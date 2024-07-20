@@ -17,6 +17,11 @@ FROM golang:1.22.3 AS e2e
 WORKDIR /cart
 COPY ./cart .
 
+
+FROM golang:1.22.3 AS test
+WORKDIR /cart
+COPY ./cart .
+
 FROM golang:1.22.3 AS builder
 ENV GOOS=linux
 ENV CGO_ENABLED=0
