@@ -22,7 +22,7 @@ type cService struct {
 	productCli ProductClient
 	cartStore  memorystore.Storage
 	lomsCli    lomscli.LomsService
-	logger     logger.ILog
+	logger     logger.Logger
 }
 
 // ProductClient определяет интерфейс, который должны реализовывать клиенты.
@@ -31,7 +31,7 @@ type ProductClient interface {
 }
 
 // NewService создает новый сервис включая в него клиентов и хранилище.
-func NewService(l logger.ILog, product ProductClient, loms lomscli.LomsService, store memorystore.Storage) Service {
+func NewService(l logger.Logger, product ProductClient, loms lomscli.LomsService, store memorystore.Storage) Service {
 	return &cService{
 		productCli: product,
 		lomsCli:    loms,

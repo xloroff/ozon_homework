@@ -19,6 +19,9 @@ build:
 lint:
 	golangci-lint run --config=./golangci.yaml
 
+pprof:
+	go tool pprof -http :9999 http://localhost:8084/debug/pprof/profile\?seconds=5
+
 cover:
 	@go test -vet=off ./... -coverprofile ../cover/cover_loms.out.tmp > /dev/null
 	@grep -vE "_mock.go" ../cover/cover_loms.out.tmp > ../cover/cover_loms.out

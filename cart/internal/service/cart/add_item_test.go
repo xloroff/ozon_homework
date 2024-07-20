@@ -22,7 +22,7 @@ func TestAddItemTable(t *testing.T) {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
 		lomsCliMock    *mock.LomsClientMock
-		loggerMock     logger.ILog
+		loggerMock     logger.Logger
 	}
 
 	type data struct {
@@ -43,7 +43,7 @@ func TestAddItemTable(t *testing.T) {
 			skuID:  1,
 			count:  1,
 			prepare: func(f *fields) {
-				f.productCliMock.GetProductMock.Expect(ctx, 1).Return(nil, model.ErrNotFound)
+				f.productCliMock.GetProductMock.Expect(minimock.AnyContext, 1).Return(nil, model.ErrNotFound)
 			},
 			wantErr: model.ErrNotFound,
 		},
@@ -53,7 +53,7 @@ func TestAddItemTable(t *testing.T) {
 			skuID:  100,
 			count:  2,
 			prepare: func(f *fields) {
-				f.productCliMock.GetProductMock.Expect(ctx, 100).Return(&model.ProductResp{
+				f.productCliMock.GetProductMock.Expect(minimock.AnyContext, 100).Return(&model.ProductResp{
 					Name:  "Тестовый товар",
 					Price: 250,
 				}, nil)
@@ -68,7 +68,7 @@ func TestAddItemTable(t *testing.T) {
 			skuID:  200,
 			count:  1,
 			prepare: func(f *fields) {
-				f.productCliMock.GetProductMock.Expect(ctx, 200).Return(&model.ProductResp{
+				f.productCliMock.GetProductMock.Expect(minimock.AnyContext, 200).Return(&model.ProductResp{
 					Name:  "Тестовый товар 2",
 					Price: 500,
 				}, nil)
@@ -83,7 +83,7 @@ func TestAddItemTable(t *testing.T) {
 			skuID:  300,
 			count:  100,
 			prepare: func(f *fields) {
-				f.productCliMock.GetProductMock.Expect(ctx, 300).Return(&model.ProductResp{
+				f.productCliMock.GetProductMock.Expect(minimock.AnyContext, 300).Return(&model.ProductResp{
 					Name:  "Тестовый товар 3",
 					Price: 500,
 				}, nil)

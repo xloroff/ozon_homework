@@ -36,7 +36,7 @@ func TestGetAllUserItemsTable(t *testing.T) {
 		productCliMock *mock.ProductClientMock
 		storageMock    *mock.StorageMock
 		lomsCliMock    *mock.LomsClientMock
-		loggerMock     logger.ILog
+		loggerMock     logger.Logger
 	}
 
 	testData := []data{
@@ -126,7 +126,7 @@ func TestGetAllUserItemsTable(t *testing.T) {
 			t.Parallel()
 
 			f.storageMock.GetAllUserItemsMock.
-				When(ctx, tt.userID).
+				When(minimock.AnyContext, tt.userID).
 				Then(tt.cart, tt.wantErr)
 
 			var wg sync.WaitGroup

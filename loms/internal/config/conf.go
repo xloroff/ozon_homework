@@ -11,3 +11,6 @@ const (
 
 // HTTPCalmStatus Какая-то нестандартная ошибка которая может появляться при коммуникации с внешним сервисом продуктов.
 const HTTPCalmStatus = 420
+
+// AppName имя приложения.
+const AppName = "loms"

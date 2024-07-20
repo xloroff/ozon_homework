@@ -9,13 +9,20 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/tracer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/api/order/v1"
 )
 
 // Cancel отмена заказа и высвобождение резервов.
 func (a *API) Cancel(ctx context.Context, req *order.OrderCancelRequest) (*emptypb.Empty, error) {
-	err := a.orderService.Cancel(req.GetOrderId())
+	ctx, span := tracer.StartSpanFromContext(ctx, "api.orderapi.cancel")
+	span.SetTag("component", "orderapi")
+
+	defer span.End()
+
+	err := a.orderService.Cancel(ctx, req.GetOrderId())
 	if err != nil {
+		span.SetTag("error", true)
 		a.logger.Debugf(ctx, "OrderApi.Cancel: Ошибка отмены заказа - %s - %v", req.GetOrderId(), err)
 
 		if errors.Is(err, model.ErrOrderNotFound) || errors.Is(err, model.ErrOrderCancel) {

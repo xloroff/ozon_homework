@@ -5,6 +5,7 @@ package mock
 //go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/stock_store.Storage -o stock_storage_mock.go -n StockStorageMock -p mock
 
 import (
+	"context"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -18,26 +19,26 @@ type StockStorageMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcAddReserve          func(items model.AllNeedReserve) (err error)
-	inspectFuncAddReserve   func(items model.AllNeedReserve)
+	funcAddReserve          func(ctx context.Context, items model.AllNeedReserve) (err error)
+	inspectFuncAddReserve   func(ctx context.Context, items model.AllNeedReserve)
 	afterAddReserveCounter  uint64
 	beforeAddReserveCounter uint64
 	AddReserveMock          mStockStorageMockAddReserve
 
-	funcCancelReserve          func(items model.AllNeedReserve) (err error)
-	inspectFuncCancelReserve   func(items model.AllNeedReserve)
+	funcCancelReserve          func(ctx context.Context, items model.AllNeedReserve) (err error)
+	inspectFuncCancelReserve   func(ctx context.Context, items model.AllNeedReserve)
 	afterCancelReserveCounter  uint64
 	beforeCancelReserveCounter uint64
 	CancelReserveMock          mStockStorageMockCancelReserve
 
-	funcDelItemFromReserve          func(items model.AllNeedReserve) (err error)
-	inspectFuncDelItemFromReserve   func(items model.AllNeedReserve)
+	funcDelItemFromReserve          func(ctx context.Context, items model.AllNeedReserve) (err error)
+	inspectFuncDelItemFromReserve   func(ctx context.Context, items model.AllNeedReserve)
 	afterDelItemFromReserveCounter  uint64
 	beforeDelItemFromReserveCounter uint64
 	DelItemFromReserveMock          mStockStorageMockDelItemFromReserve
 
-	funcGetAvailableForReserve          func(sku int64) (u1 uint16, err error)
-	inspectFuncGetAvailableForReserve   func(sku int64)
+	funcGetAvailableForReserve          func(ctx context.Context, sku int64) (u1 uint16, err error)
+	inspectFuncGetAvailableForReserve   func(ctx context.Context, sku int64)
 	afterGetAvailableForReserveCounter  uint64
 	beforeGetAvailableForReserveCounter uint64
 	GetAvailableForReserveMock          mStockStorageMockGetAvailableForReserve
@@ -91,11 +92,13 @@ type StockStorageMockAddReserveExpectation struct {
 
 // StockStorageMockAddReserveParams contains parameters of the Storage.AddReserve
 type StockStorageMockAddReserveParams struct {
+	ctx   context.Context
 	items model.AllNeedReserve
 }
 
 // StockStorageMockAddReserveParamPtrs contains pointers to parameters of the Storage.AddReserve
 type StockStorageMockAddReserveParamPtrs struct {
+	ctx   *context.Context
 	items *model.AllNeedReserve
 }
 
@@ -115,7 +118,7 @@ func (mmAddReserve *mStockStorageMockAddReserve) Optional() *mStockStorageMockAd
 }
 
 // Expect sets up expected params for Storage.AddReserve
-func (mmAddReserve *mStockStorageMockAddReserve) Expect(items model.AllNeedReserve) *mStockStorageMockAddReserve {
+func (mmAddReserve *mStockStorageMockAddReserve) Expect(ctx context.Context, items model.AllNeedReserve) *mStockStorageMockAddReserve {
 	if mmAddReserve.mock.funcAddReserve != nil {
 		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by Set")
 	}
@@ -128,7 +131,7 @@ func (mmAddReserve *mStockStorageMockAddReserve) Expect(items model.AllNeedReser
 		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by ExpectParams functions")
 	}
 
-	mmAddReserve.defaultExpectation.params = &StockStorageMockAddReserveParams{items}
+	mmAddReserve.defaultExpectation.params = &StockStorageMockAddReserveParams{ctx, items}
 	for _, e := range mmAddReserve.expectations {
 		if minimock.Equal(e.params, mmAddReserve.defaultExpectation.params) {
 			mmAddReserve.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmAddReserve.defaultExpectation.params)
@@ -138,8 +141,30 @@ func (mmAddReserve *mStockStorageMockAddReserve) Expect(items model.AllNeedReser
 	return mmAddReserve
 }
 
-// ExpectItemsParam1 sets up expected param items for Storage.AddReserve
-func (mmAddReserve *mStockStorageMockAddReserve) ExpectItemsParam1(items model.AllNeedReserve) *mStockStorageMockAddReserve {
+// ExpectCtxParam1 sets up expected param ctx for Storage.AddReserve
+func (mmAddReserve *mStockStorageMockAddReserve) ExpectCtxParam1(ctx context.Context) *mStockStorageMockAddReserve {
+	if mmAddReserve.mock.funcAddReserve != nil {
+		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by Set")
+	}
+
+	if mmAddReserve.defaultExpectation == nil {
+		mmAddReserve.defaultExpectation = &StockStorageMockAddReserveExpectation{}
+	}
+
+	if mmAddReserve.defaultExpectation.params != nil {
+		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by Expect")
+	}
+
+	if mmAddReserve.defaultExpectation.paramPtrs == nil {
+		mmAddReserve.defaultExpectation.paramPtrs = &StockStorageMockAddReserveParamPtrs{}
+	}
+	mmAddReserve.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmAddReserve
+}
+
+// ExpectItemsParam2 sets up expected param items for Storage.AddReserve
+func (mmAddReserve *mStockStorageMockAddReserve) ExpectItemsParam2(items model.AllNeedReserve) *mStockStorageMockAddReserve {
 	if mmAddReserve.mock.funcAddReserve != nil {
 		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by Set")
 	}
@@ -161,7 +186,7 @@ func (mmAddReserve *mStockStorageMockAddReserve) ExpectItemsParam1(items model.A
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.AddReserve
-func (mmAddReserve *mStockStorageMockAddReserve) Inspect(f func(items model.AllNeedReserve)) *mStockStorageMockAddReserve {
+func (mmAddReserve *mStockStorageMockAddReserve) Inspect(f func(ctx context.Context, items model.AllNeedReserve)) *mStockStorageMockAddReserve {
 	if mmAddReserve.mock.inspectFuncAddReserve != nil {
 		mmAddReserve.mock.t.Fatalf("Inspect function is already set for StockStorageMock.AddReserve")
 	}
@@ -185,7 +210,7 @@ func (mmAddReserve *mStockStorageMockAddReserve) Return(err error) *StockStorage
 }
 
 // Set uses given function f to mock the Storage.AddReserve method
-func (mmAddReserve *mStockStorageMockAddReserve) Set(f func(items model.AllNeedReserve) (err error)) *StockStorageMock {
+func (mmAddReserve *mStockStorageMockAddReserve) Set(f func(ctx context.Context, items model.AllNeedReserve) (err error)) *StockStorageMock {
 	if mmAddReserve.defaultExpectation != nil {
 		mmAddReserve.mock.t.Fatalf("Default expectation is already set for the Storage.AddReserve method")
 	}
@@ -200,14 +225,14 @@ func (mmAddReserve *mStockStorageMockAddReserve) Set(f func(items model.AllNeedR
 
 // When sets expectation for the Storage.AddReserve which will trigger the result defined by the following
 // Then helper
-func (mmAddReserve *mStockStorageMockAddReserve) When(items model.AllNeedReserve) *StockStorageMockAddReserveExpectation {
+func (mmAddReserve *mStockStorageMockAddReserve) When(ctx context.Context, items model.AllNeedReserve) *StockStorageMockAddReserveExpectation {
 	if mmAddReserve.mock.funcAddReserve != nil {
 		mmAddReserve.mock.t.Fatalf("StockStorageMock.AddReserve mock is already set by Set")
 	}
 
 	expectation := &StockStorageMockAddReserveExpectation{
 		mock:   mmAddReserve.mock,
-		params: &StockStorageMockAddReserveParams{items},
+		params: &StockStorageMockAddReserveParams{ctx, items},
 	}
 	mmAddReserve.expectations = append(mmAddReserve.expectations, expectation)
 	return expectation
@@ -240,15 +265,15 @@ func (mmAddReserve *mStockStorageMockAddReserve) invocationsDone() bool {
 }
 
 // AddReserve implements stockstore.Storage
-func (mmAddReserve *StockStorageMock) AddReserve(items model.AllNeedReserve) (err error) {
+func (mmAddReserve *StockStorageMock) AddReserve(ctx context.Context, items model.AllNeedReserve) (err error) {
 	mm_atomic.AddUint64(&mmAddReserve.beforeAddReserveCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddReserve.afterAddReserveCounter, 1)
 
 	if mmAddReserve.inspectFuncAddReserve != nil {
-		mmAddReserve.inspectFuncAddReserve(items)
+		mmAddReserve.inspectFuncAddReserve(ctx, items)
 	}
 
-	mm_params := StockStorageMockAddReserveParams{items}
+	mm_params := StockStorageMockAddReserveParams{ctx, items}
 
 	// Record call args
 	mmAddReserve.AddReserveMock.mutex.Lock()
@@ -267,9 +292,13 @@ func (mmAddReserve *StockStorageMock) AddReserve(items model.AllNeedReserve) (er
 		mm_want := mmAddReserve.AddReserveMock.defaultExpectation.params
 		mm_want_ptrs := mmAddReserve.AddReserveMock.defaultExpectation.paramPtrs
 
-		mm_got := StockStorageMockAddReserveParams{items}
+		mm_got := StockStorageMockAddReserveParams{ctx, items}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmAddReserve.t.Errorf("StockStorageMock.AddReserve got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.items != nil && !minimock.Equal(*mm_want_ptrs.items, mm_got.items) {
 				mmAddReserve.t.Errorf("StockStorageMock.AddReserve got unexpected parameter items, want: %#v, got: %#v%s\n", *mm_want_ptrs.items, mm_got.items, minimock.Diff(*mm_want_ptrs.items, mm_got.items))
@@ -286,9 +315,9 @@ func (mmAddReserve *StockStorageMock) AddReserve(items model.AllNeedReserve) (er
 		return (*mm_results).err
 	}
 	if mmAddReserve.funcAddReserve != nil {
-		return mmAddReserve.funcAddReserve(items)
+		return mmAddReserve.funcAddReserve(ctx, items)
 	}
-	mmAddReserve.t.Fatalf("Unexpected call to StockStorageMock.AddReserve. %v", items)
+	mmAddReserve.t.Fatalf("Unexpected call to StockStorageMock.AddReserve. %v %v", ctx, items)
 	return
 }
 
@@ -383,11 +412,13 @@ type StockStorageMockCancelReserveExpectation struct {
 
 // StockStorageMockCancelReserveParams contains parameters of the Storage.CancelReserve
 type StockStorageMockCancelReserveParams struct {
+	ctx   context.Context
 	items model.AllNeedReserve
 }
 
 // StockStorageMockCancelReserveParamPtrs contains pointers to parameters of the Storage.CancelReserve
 type StockStorageMockCancelReserveParamPtrs struct {
+	ctx   *context.Context
 	items *model.AllNeedReserve
 }
 
@@ -407,7 +438,7 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) Optional() *mStockStorage
 }
 
 // Expect sets up expected params for Storage.CancelReserve
-func (mmCancelReserve *mStockStorageMockCancelReserve) Expect(items model.AllNeedReserve) *mStockStorageMockCancelReserve {
+func (mmCancelReserve *mStockStorageMockCancelReserve) Expect(ctx context.Context, items model.AllNeedReserve) *mStockStorageMockCancelReserve {
 	if mmCancelReserve.mock.funcCancelReserve != nil {
 		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by Set")
 	}
@@ -420,7 +451,7 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) Expect(items model.AllNee
 		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by ExpectParams functions")
 	}
 
-	mmCancelReserve.defaultExpectation.params = &StockStorageMockCancelReserveParams{items}
+	mmCancelReserve.defaultExpectation.params = &StockStorageMockCancelReserveParams{ctx, items}
 	for _, e := range mmCancelReserve.expectations {
 		if minimock.Equal(e.params, mmCancelReserve.defaultExpectation.params) {
 			mmCancelReserve.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmCancelReserve.defaultExpectation.params)
@@ -430,8 +461,30 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) Expect(items model.AllNee
 	return mmCancelReserve
 }
 
-// ExpectItemsParam1 sets up expected param items for Storage.CancelReserve
-func (mmCancelReserve *mStockStorageMockCancelReserve) ExpectItemsParam1(items model.AllNeedReserve) *mStockStorageMockCancelReserve {
+// ExpectCtxParam1 sets up expected param ctx for Storage.CancelReserve
+func (mmCancelReserve *mStockStorageMockCancelReserve) ExpectCtxParam1(ctx context.Context) *mStockStorageMockCancelReserve {
+	if mmCancelReserve.mock.funcCancelReserve != nil {
+		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by Set")
+	}
+
+	if mmCancelReserve.defaultExpectation == nil {
+		mmCancelReserve.defaultExpectation = &StockStorageMockCancelReserveExpectation{}
+	}
+
+	if mmCancelReserve.defaultExpectation.params != nil {
+		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by Expect")
+	}
+
+	if mmCancelReserve.defaultExpectation.paramPtrs == nil {
+		mmCancelReserve.defaultExpectation.paramPtrs = &StockStorageMockCancelReserveParamPtrs{}
+	}
+	mmCancelReserve.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmCancelReserve
+}
+
+// ExpectItemsParam2 sets up expected param items for Storage.CancelReserve
+func (mmCancelReserve *mStockStorageMockCancelReserve) ExpectItemsParam2(items model.AllNeedReserve) *mStockStorageMockCancelReserve {
 	if mmCancelReserve.mock.funcCancelReserve != nil {
 		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by Set")
 	}
@@ -453,7 +506,7 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) ExpectItemsParam1(items m
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.CancelReserve
-func (mmCancelReserve *mStockStorageMockCancelReserve) Inspect(f func(items model.AllNeedReserve)) *mStockStorageMockCancelReserve {
+func (mmCancelReserve *mStockStorageMockCancelReserve) Inspect(f func(ctx context.Context, items model.AllNeedReserve)) *mStockStorageMockCancelReserve {
 	if mmCancelReserve.mock.inspectFuncCancelReserve != nil {
 		mmCancelReserve.mock.t.Fatalf("Inspect function is already set for StockStorageMock.CancelReserve")
 	}
@@ -477,7 +530,7 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) Return(err error) *StockS
 }
 
 // Set uses given function f to mock the Storage.CancelReserve method
-func (mmCancelReserve *mStockStorageMockCancelReserve) Set(f func(items model.AllNeedReserve) (err error)) *StockStorageMock {
+func (mmCancelReserve *mStockStorageMockCancelReserve) Set(f func(ctx context.Context, items model.AllNeedReserve) (err error)) *StockStorageMock {
 	if mmCancelReserve.defaultExpectation != nil {
 		mmCancelReserve.mock.t.Fatalf("Default expectation is already set for the Storage.CancelReserve method")
 	}
@@ -492,14 +545,14 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) Set(f func(items model.Al
 
 // When sets expectation for the Storage.CancelReserve which will trigger the result defined by the following
 // Then helper
-func (mmCancelReserve *mStockStorageMockCancelReserve) When(items model.AllNeedReserve) *StockStorageMockCancelReserveExpectation {
+func (mmCancelReserve *mStockStorageMockCancelReserve) When(ctx context.Context, items model.AllNeedReserve) *StockStorageMockCancelReserveExpectation {
 	if mmCancelReserve.mock.funcCancelReserve != nil {
 		mmCancelReserve.mock.t.Fatalf("StockStorageMock.CancelReserve mock is already set by Set")
 	}
 
 	expectation := &StockStorageMockCancelReserveExpectation{
 		mock:   mmCancelReserve.mock,
-		params: &StockStorageMockCancelReserveParams{items},
+		params: &StockStorageMockCancelReserveParams{ctx, items},
 	}
 	mmCancelReserve.expectations = append(mmCancelReserve.expectations, expectation)
 	return expectation
@@ -532,15 +585,15 @@ func (mmCancelReserve *mStockStorageMockCancelReserve) invocationsDone() bool {
 }
 
 // CancelReserve implements stockstore.Storage
-func (mmCancelReserve *StockStorageMock) CancelReserve(items model.AllNeedReserve) (err error) {
+func (mmCancelReserve *StockStorageMock) CancelReserve(ctx context.Context, items model.AllNeedReserve) (err error) {
 	mm_atomic.AddUint64(&mmCancelReserve.beforeCancelReserveCounter, 1)
 	defer mm_atomic.AddUint64(&mmCancelReserve.afterCancelReserveCounter, 1)
 
 	if mmCancelReserve.inspectFuncCancelReserve != nil {
-		mmCancelReserve.inspectFuncCancelReserve(items)
+		mmCancelReserve.inspectFuncCancelReserve(ctx, items)
 	}
 
-	mm_params := StockStorageMockCancelReserveParams{items}
+	mm_params := StockStorageMockCancelReserveParams{ctx, items}
 
 	// Record call args
 	mmCancelReserve.CancelReserveMock.mutex.Lock()
@@ -559,9 +612,13 @@ func (mmCancelReserve *StockStorageMock) CancelReserve(items model.AllNeedReserv
 		mm_want := mmCancelReserve.CancelReserveMock.defaultExpectation.params
 		mm_want_ptrs := mmCancelReserve.CancelReserveMock.defaultExpectation.paramPtrs
 
-		mm_got := StockStorageMockCancelReserveParams{items}
+		mm_got := StockStorageMockCancelReserveParams{ctx, items}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmCancelReserve.t.Errorf("StockStorageMock.CancelReserve got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.items != nil && !minimock.Equal(*mm_want_ptrs.items, mm_got.items) {
 				mmCancelReserve.t.Errorf("StockStorageMock.CancelReserve got unexpected parameter items, want: %#v, got: %#v%s\n", *mm_want_ptrs.items, mm_got.items, minimock.Diff(*mm_want_ptrs.items, mm_got.items))
@@ -578,9 +635,9 @@ func (mmCancelReserve *StockStorageMock) CancelReserve(items model.AllNeedReserv
 		return (*mm_results).err
 	}
 	if mmCancelReserve.funcCancelReserve != nil {
-		return mmCancelReserve.funcCancelReserve(items)
+		return mmCancelReserve.funcCancelReserve(ctx, items)
 	}
-	mmCancelReserve.t.Fatalf("Unexpected call to StockStorageMock.CancelReserve. %v", items)
+	mmCancelReserve.t.Fatalf("Unexpected call to StockStorageMock.CancelReserve. %v %v", ctx, items)
 	return
 }
 
@@ -675,11 +732,13 @@ type StockStorageMockDelItemFromReserveExpectation struct {
 
 // StockStorageMockDelItemFromReserveParams contains parameters of the Storage.DelItemFromReserve
 type StockStorageMockDelItemFromReserveParams struct {
+	ctx   context.Context
 	items model.AllNeedReserve
 }
 
 // StockStorageMockDelItemFromReserveParamPtrs contains pointers to parameters of the Storage.DelItemFromReserve
 type StockStorageMockDelItemFromReserveParamPtrs struct {
+	ctx   *context.Context
 	items *model.AllNeedReserve
 }
 
@@ -699,7 +758,7 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Optional() *mSt
 }
 
 // Expect sets up expected params for Storage.DelItemFromReserve
-func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Expect(items model.AllNeedReserve) *mStockStorageMockDelItemFromReserve {
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Expect(ctx context.Context, items model.AllNeedReserve) *mStockStorageMockDelItemFromReserve {
 	if mmDelItemFromReserve.mock.funcDelItemFromReserve != nil {
 		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by Set")
 	}
@@ -712,7 +771,7 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Expect(items mo
 		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by ExpectParams functions")
 	}
 
-	mmDelItemFromReserve.defaultExpectation.params = &StockStorageMockDelItemFromReserveParams{items}
+	mmDelItemFromReserve.defaultExpectation.params = &StockStorageMockDelItemFromReserveParams{ctx, items}
 	for _, e := range mmDelItemFromReserve.expectations {
 		if minimock.Equal(e.params, mmDelItemFromReserve.defaultExpectation.params) {
 			mmDelItemFromReserve.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmDelItemFromReserve.defaultExpectation.params)
@@ -722,8 +781,30 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Expect(items mo
 	return mmDelItemFromReserve
 }
 
-// ExpectItemsParam1 sets up expected param items for Storage.DelItemFromReserve
-func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) ExpectItemsParam1(items model.AllNeedReserve) *mStockStorageMockDelItemFromReserve {
+// ExpectCtxParam1 sets up expected param ctx for Storage.DelItemFromReserve
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) ExpectCtxParam1(ctx context.Context) *mStockStorageMockDelItemFromReserve {
+	if mmDelItemFromReserve.mock.funcDelItemFromReserve != nil {
+		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by Set")
+	}
+
+	if mmDelItemFromReserve.defaultExpectation == nil {
+		mmDelItemFromReserve.defaultExpectation = &StockStorageMockDelItemFromReserveExpectation{}
+	}
+
+	if mmDelItemFromReserve.defaultExpectation.params != nil {
+		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by Expect")
+	}
+
+	if mmDelItemFromReserve.defaultExpectation.paramPtrs == nil {
+		mmDelItemFromReserve.defaultExpectation.paramPtrs = &StockStorageMockDelItemFromReserveParamPtrs{}
+	}
+	mmDelItemFromReserve.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmDelItemFromReserve
+}
+
+// ExpectItemsParam2 sets up expected param items for Storage.DelItemFromReserve
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) ExpectItemsParam2(items model.AllNeedReserve) *mStockStorageMockDelItemFromReserve {
 	if mmDelItemFromReserve.mock.funcDelItemFromReserve != nil {
 		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by Set")
 	}
@@ -745,7 +826,7 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) ExpectItemsPara
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.DelItemFromReserve
-func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Inspect(f func(items model.AllNeedReserve)) *mStockStorageMockDelItemFromReserve {
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Inspect(f func(ctx context.Context, items model.AllNeedReserve)) *mStockStorageMockDelItemFromReserve {
 	if mmDelItemFromReserve.mock.inspectFuncDelItemFromReserve != nil {
 		mmDelItemFromReserve.mock.t.Fatalf("Inspect function is already set for StockStorageMock.DelItemFromReserve")
 	}
@@ -769,7 +850,7 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Return(err erro
 }
 
 // Set uses given function f to mock the Storage.DelItemFromReserve method
-func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Set(f func(items model.AllNeedReserve) (err error)) *StockStorageMock {
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Set(f func(ctx context.Context, items model.AllNeedReserve) (err error)) *StockStorageMock {
 	if mmDelItemFromReserve.defaultExpectation != nil {
 		mmDelItemFromReserve.mock.t.Fatalf("Default expectation is already set for the Storage.DelItemFromReserve method")
 	}
@@ -784,14 +865,14 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) Set(f func(item
 
 // When sets expectation for the Storage.DelItemFromReserve which will trigger the result defined by the following
 // Then helper
-func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) When(items model.AllNeedReserve) *StockStorageMockDelItemFromReserveExpectation {
+func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) When(ctx context.Context, items model.AllNeedReserve) *StockStorageMockDelItemFromReserveExpectation {
 	if mmDelItemFromReserve.mock.funcDelItemFromReserve != nil {
 		mmDelItemFromReserve.mock.t.Fatalf("StockStorageMock.DelItemFromReserve mock is already set by Set")
 	}
 
 	expectation := &StockStorageMockDelItemFromReserveExpectation{
 		mock:   mmDelItemFromReserve.mock,
-		params: &StockStorageMockDelItemFromReserveParams{items},
+		params: &StockStorageMockDelItemFromReserveParams{ctx, items},
 	}
 	mmDelItemFromReserve.expectations = append(mmDelItemFromReserve.expectations, expectation)
 	return expectation
@@ -824,15 +905,15 @@ func (mmDelItemFromReserve *mStockStorageMockDelItemFromReserve) invocationsDone
 }
 
 // DelItemFromReserve implements stockstore.Storage
-func (mmDelItemFromReserve *StockStorageMock) DelItemFromReserve(items model.AllNeedReserve) (err error) {
+func (mmDelItemFromReserve *StockStorageMock) DelItemFromReserve(ctx context.Context, items model.AllNeedReserve) (err error) {
 	mm_atomic.AddUint64(&mmDelItemFromReserve.beforeDelItemFromReserveCounter, 1)
 	defer mm_atomic.AddUint64(&mmDelItemFromReserve.afterDelItemFromReserveCounter, 1)
 
 	if mmDelItemFromReserve.inspectFuncDelItemFromReserve != nil {
-		mmDelItemFromReserve.inspectFuncDelItemFromReserve(items)
+		mmDelItemFromReserve.inspectFuncDelItemFromReserve(ctx, items)
 	}
 
-	mm_params := StockStorageMockDelItemFromReserveParams{items}
+	mm_params := StockStorageMockDelItemFromReserveParams{ctx, items}
 
 	// Record call args
 	mmDelItemFromReserve.DelItemFromReserveMock.mutex.Lock()
@@ -851,9 +932,13 @@ func (mmDelItemFromReserve *StockStorageMock) DelItemFromReserve(items model.All
 		mm_want := mmDelItemFromReserve.DelItemFromReserveMock.defaultExpectation.params
 		mm_want_ptrs := mmDelItemFromReserve.DelItemFromReserveMock.defaultExpectation.paramPtrs
 
-		mm_got := StockStorageMockDelItemFromReserveParams{items}
+		mm_got := StockStorageMockDelItemFromReserveParams{ctx, items}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmDelItemFromReserve.t.Errorf("StockStorageMock.DelItemFromReserve got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.items != nil && !minimock.Equal(*mm_want_ptrs.items, mm_got.items) {
 				mmDelItemFromReserve.t.Errorf("StockStorageMock.DelItemFromReserve got unexpected parameter items, want: %#v, got: %#v%s\n", *mm_want_ptrs.items, mm_got.items, minimock.Diff(*mm_want_ptrs.items, mm_got.items))
@@ -870,9 +955,9 @@ func (mmDelItemFromReserve *StockStorageMock) DelItemFromReserve(items model.All
 		return (*mm_results).err
 	}
 	if mmDelItemFromReserve.funcDelItemFromReserve != nil {
-		return mmDelItemFromReserve.funcDelItemFromReserve(items)
+		return mmDelItemFromReserve.funcDelItemFromReserve(ctx, items)
 	}
-	mmDelItemFromReserve.t.Fatalf("Unexpected call to StockStorageMock.DelItemFromReserve. %v", items)
+	mmDelItemFromReserve.t.Fatalf("Unexpected call to StockStorageMock.DelItemFromReserve. %v %v", ctx, items)
 	return
 }
 
@@ -967,11 +1052,13 @@ type StockStorageMockGetAvailableForReserveExpectation struct {
 
 // StockStorageMockGetAvailableForReserveParams contains parameters of the Storage.GetAvailableForReserve
 type StockStorageMockGetAvailableForReserveParams struct {
+	ctx context.Context
 	sku int64
 }
 
 // StockStorageMockGetAvailableForReserveParamPtrs contains pointers to parameters of the Storage.GetAvailableForReserve
 type StockStorageMockGetAvailableForReserveParamPtrs struct {
+	ctx *context.Context
 	sku *int64
 }
 
@@ -992,7 +1079,7 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Optiona
 }
 
 // Expect sets up expected params for Storage.GetAvailableForReserve
-func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Expect(sku int64) *mStockStorageMockGetAvailableForReserve {
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Expect(ctx context.Context, sku int64) *mStockStorageMockGetAvailableForReserve {
 	if mmGetAvailableForReserve.mock.funcGetAvailableForReserve != nil {
 		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by Set")
 	}
@@ -1005,7 +1092,7 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Expect(
 		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by ExpectParams functions")
 	}
 
-	mmGetAvailableForReserve.defaultExpectation.params = &StockStorageMockGetAvailableForReserveParams{sku}
+	mmGetAvailableForReserve.defaultExpectation.params = &StockStorageMockGetAvailableForReserveParams{ctx, sku}
 	for _, e := range mmGetAvailableForReserve.expectations {
 		if minimock.Equal(e.params, mmGetAvailableForReserve.defaultExpectation.params) {
 			mmGetAvailableForReserve.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmGetAvailableForReserve.defaultExpectation.params)
@@ -1015,8 +1102,30 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Expect(
 	return mmGetAvailableForReserve
 }
 
-// ExpectSkuParam1 sets up expected param sku for Storage.GetAvailableForReserve
-func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) ExpectSkuParam1(sku int64) *mStockStorageMockGetAvailableForReserve {
+// ExpectCtxParam1 sets up expected param ctx for Storage.GetAvailableForReserve
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) ExpectCtxParam1(ctx context.Context) *mStockStorageMockGetAvailableForReserve {
+	if mmGetAvailableForReserve.mock.funcGetAvailableForReserve != nil {
+		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by Set")
+	}
+
+	if mmGetAvailableForReserve.defaultExpectation == nil {
+		mmGetAvailableForReserve.defaultExpectation = &StockStorageMockGetAvailableForReserveExpectation{}
+	}
+
+	if mmGetAvailableForReserve.defaultExpectation.params != nil {
+		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by Expect")
+	}
+
+	if mmGetAvailableForReserve.defaultExpectation.paramPtrs == nil {
+		mmGetAvailableForReserve.defaultExpectation.paramPtrs = &StockStorageMockGetAvailableForReserveParamPtrs{}
+	}
+	mmGetAvailableForReserve.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmGetAvailableForReserve
+}
+
+// ExpectSkuParam2 sets up expected param sku for Storage.GetAvailableForReserve
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) ExpectSkuParam2(sku int64) *mStockStorageMockGetAvailableForReserve {
 	if mmGetAvailableForReserve.mock.funcGetAvailableForReserve != nil {
 		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by Set")
 	}
@@ -1038,7 +1147,7 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) ExpectS
 }
 
 // Inspect accepts an inspector function that has same arguments as the Storage.GetAvailableForReserve
-func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Inspect(f func(sku int64)) *mStockStorageMockGetAvailableForReserve {
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Inspect(f func(ctx context.Context, sku int64)) *mStockStorageMockGetAvailableForReserve {
 	if mmGetAvailableForReserve.mock.inspectFuncGetAvailableForReserve != nil {
 		mmGetAvailableForReserve.mock.t.Fatalf("Inspect function is already set for StockStorageMock.GetAvailableForReserve")
 	}
@@ -1062,7 +1171,7 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Return(
 }
 
 // Set uses given function f to mock the Storage.GetAvailableForReserve method
-func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Set(f func(sku int64) (u1 uint16, err error)) *StockStorageMock {
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Set(f func(ctx context.Context, sku int64) (u1 uint16, err error)) *StockStorageMock {
 	if mmGetAvailableForReserve.defaultExpectation != nil {
 		mmGetAvailableForReserve.mock.t.Fatalf("Default expectation is already set for the Storage.GetAvailableForReserve method")
 	}
@@ -1077,14 +1186,14 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) Set(f f
 
 // When sets expectation for the Storage.GetAvailableForReserve which will trigger the result defined by the following
 // Then helper
-func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) When(sku int64) *StockStorageMockGetAvailableForReserveExpectation {
+func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) When(ctx context.Context, sku int64) *StockStorageMockGetAvailableForReserveExpectation {
 	if mmGetAvailableForReserve.mock.funcGetAvailableForReserve != nil {
 		mmGetAvailableForReserve.mock.t.Fatalf("StockStorageMock.GetAvailableForReserve mock is already set by Set")
 	}
 
 	expectation := &StockStorageMockGetAvailableForReserveExpectation{
 		mock:   mmGetAvailableForReserve.mock,
-		params: &StockStorageMockGetAvailableForReserveParams{sku},
+		params: &StockStorageMockGetAvailableForReserveParams{ctx, sku},
 	}
 	mmGetAvailableForReserve.expectations = append(mmGetAvailableForReserve.expectations, expectation)
 	return expectation
@@ -1117,15 +1226,15 @@ func (mmGetAvailableForReserve *mStockStorageMockGetAvailableForReserve) invocat
 }
 
 // GetAvailableForReserve implements stockstore.Storage
-func (mmGetAvailableForReserve *StockStorageMock) GetAvailableForReserve(sku int64) (u1 uint16, err error) {
+func (mmGetAvailableForReserve *StockStorageMock) GetAvailableForReserve(ctx context.Context, sku int64) (u1 uint16, err error) {
 	mm_atomic.AddUint64(&mmGetAvailableForReserve.beforeGetAvailableForReserveCounter, 1)
 	defer mm_atomic.AddUint64(&mmGetAvailableForReserve.afterGetAvailableForReserveCounter, 1)
 
 	if mmGetAvailableForReserve.inspectFuncGetAvailableForReserve != nil {
-		mmGetAvailableForReserve.inspectFuncGetAvailableForReserve(sku)
+		mmGetAvailableForReserve.inspectFuncGetAvailableForReserve(ctx, sku)
 	}
 
-	mm_params := StockStorageMockGetAvailableForReserveParams{sku}
+	mm_params := StockStorageMockGetAvailableForReserveParams{ctx, sku}
 
 	// Record call args
 	mmGetAvailableForReserve.GetAvailableForReserveMock.mutex.Lock()
@@ -1144,9 +1253,13 @@ func (mmGetAvailableForReserve *StockStorageMock) GetAvailableForReserve(sku int
 		mm_want := mmGetAvailableForReserve.GetAvailableForReserveMock.defaultExpectation.params
 		mm_want_ptrs := mmGetAvailableForReserve.GetAvailableForReserveMock.defaultExpectation.paramPtrs
 
-		mm_got := StockStorageMockGetAvailableForReserveParams{sku}
+		mm_got := StockStorageMockGetAvailableForReserveParams{ctx, sku}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmGetAvailableForReserve.t.Errorf("StockStorageMock.GetAvailableForReserve got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.sku != nil && !minimock.Equal(*mm_want_ptrs.sku, mm_got.sku) {
 				mmGetAvailableForReserve.t.Errorf("StockStorageMock.GetAvailableForReserve got unexpected parameter sku, want: %#v, got: %#v%s\n", *mm_want_ptrs.sku, mm_got.sku, minimock.Diff(*mm_want_ptrs.sku, mm_got.sku))
@@ -1163,9 +1276,9 @@ func (mmGetAvailableForReserve *StockStorageMock) GetAvailableForReserve(sku int
 		return (*mm_results).u1, (*mm_results).err
 	}
 	if mmGetAvailableForReserve.funcGetAvailableForReserve != nil {
-		return mmGetAvailableForReserve.funcGetAvailableForReserve(sku)
+		return mmGetAvailableForReserve.funcGetAvailableForReserve(ctx, sku)
 	}
-	mmGetAvailableForReserve.t.Fatalf("Unexpected call to StockStorageMock.GetAvailableForReserve. %v", sku)
+	mmGetAvailableForReserve.t.Fatalf("Unexpected call to StockStorageMock.GetAvailableForReserve. %v %v", ctx, sku)
 	return
 }
 

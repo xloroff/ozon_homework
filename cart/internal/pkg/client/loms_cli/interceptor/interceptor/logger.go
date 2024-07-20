@@ -12,7 +12,7 @@ import (
 func (i *Interceptor) Logger() grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, method string, req any, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		raw, _ := protojson.Marshal((req).(proto.Message))
-		i.logger.Infof(ctx, "Тип реквеста в сервис LOMS: %v, состав - %v", method, string(raw))
+		i.logger.Debugf(ctx, "Тип реквеста в сервис LOMS: %v, состав - %v", method, string(raw))
 
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}

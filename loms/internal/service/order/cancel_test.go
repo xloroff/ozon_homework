@@ -24,7 +24,7 @@ func TestCancelTable(t *testing.T) {
 	type fields struct {
 		stockStorageMock *mock.StockStorageMock
 		orderStorageMock *mock.OrderStorageMock
-		loggerMock       logger.ILog
+		loggerMock       logger.Logger
 	}
 
 	type data struct {
@@ -114,21 +114,21 @@ func TestCancelTable(t *testing.T) {
 			t.Parallel()
 
 			fieldsForTableTest.orderStorageMock.GetOrderMock.
-				When(tt.orderID).Then(tt.orderStore, tt.getOrderErr)
+				When(minimock.AnyContext, tt.orderID).Then(tt.orderStore, tt.getOrderErr)
 
 			delReserve := orderToReserve(tt.orderStore.Items)
 
 			if len(tt.orderStore.Items) > 0 {
 				fieldsForTableTest.stockStorageMock.CancelReserveMock.
-					When(delReserve).Then(tt.cancelReserveErr)
+					When(minimock.AnyContext, delReserve).Then(tt.cancelReserveErr)
 
 				if tt.cancelReserveErr == nil {
 					fieldsForTableTest.orderStorageMock.SetStatusMock.
-						When(tt.orderID, model.OrderStatusCancelled).Then(tt.setStatusErr)
+						When(minimock.AnyContext, tt.orderID, model.OrderStatusCancelled).Then(tt.setStatusErr)
 				}
 			}
 
-			err := servO.Cancel(tt.orderID)
+			err := servO.Cancel(ctx, tt.orderID)
 			if tt.wantErr != nil {
 				require.NotNil(t, err, "Должна быть ошибка")
 				require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)

@@ -64,7 +64,7 @@ func TestDelItemTable(t *testing.T) {
 			skuID:       1,
 			count:       1,
 			errService:  errors.New("Ошибка удаления"),
-			wantCodeAns: http.StatusBadRequest,
+			wantCodeAns: http.StatusPreconditionFailed,
 		},
 	}
 

@@ -11,14 +11,13 @@ import (
 )
 
 // Logging включаем логирование по всем входящим запросам.
-func Logging(ctx context.Context, l logger.ILog) mux.MiddlewareFunc {
+func Logging(ctx context.Context, l logger.Logger) mux.MiddlewareFunc {
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodHead {
 				executeDebug := []zap.Field{
 					zap.String("ip", ReadUserIP(r)),
 					zap.String("content_type", r.Header.Get("Content-Type")),
-					// TODO добавить еще что-то полезное, типа таймингов и пр. но как понимаю рано, будет на сл. ДЗ.
 				}
 
 				ctx = logger.Set(ctx, executeDebug)

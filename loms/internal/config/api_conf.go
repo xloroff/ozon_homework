@@ -12,6 +12,7 @@ import (
 type ApplicationParameters struct {
 	*AppSettings
 	*BDConSettings
+	*JaegerSettings
 }
 
 // AppSettings отвечает за настройки приложения.
@@ -30,6 +31,12 @@ type BDConSettings struct {
 	MigrationFolder    string `mapstructure:"MIGRATION_FOLDER" validate:"required|min_len:1" message:"Указание папки для миграций  \"MIGRATION_FOLDER\" обязательно для передачи через параметры окружения"`
 }
 
+// JaegerSettings отвечает за настройки отправки трейсов.
+type JaegerSettings struct {
+	JaegerHost string `mapstructure:"JAEGER_HOST" validate:"required|min_len:2" message:"Указание хоста для отправки трейсов \"JAEGER_HOST\" обязательно для передачи через параметры окружения"`
+	JaegerPort string `mapstructure:"JAEGER_PORT" validate:"required|min_len:2" message:"Указание порта для отправки трейсов \"JAEGER_PORT\" обязательно для передачи через параметры окружения"`
+}
+
 // LoadAPIConfig грузит настройки для API.
 func LoadAPIConfig() (*ApplicationParameters, error) {
 	appSettings, err := loadAppConfig()
@@ -42,9 +49,15 @@ func LoadAPIConfig() (*ApplicationParameters, error) {
 		return nil, err
 	}
 
+	jaegerSettings, err := loadJaegerConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ApplicationParameters{}
 	config.AppSettings = appSettings
 	config.BDConSettings = bdSettings
+	config.JaegerSettings = jaegerSettings
 
 	return config, nil
 }
@@ -93,6 +106,23 @@ func loadBDConConfig() (*BDConSettings, error) {
 	if !appBDValidate.Validate() {
 		err := appBDValidate.Errors
 		return nil, fmt.Errorf("LoadAPIConfig: ошибка валидации настроек приложения - %w", err)
+	}
+
+	return config, nil
+}
+
+// loadJaegerConfig грузит настройки подключения к Jaeger.
+func loadJaegerConfig() (*JaegerSettings, error) {
+	config := &JaegerSettings{}
+
+	config.JaegerHost = os.Getenv("JAEGER_HOST")
+	config.JaegerPort = os.Getenv("JAEGER_PORT")
+
+	// Валидируем конфигурацию.
+	appJaegerValidate := validate.Struct(config)
+	if !appJaegerValidate.Validate() {
+		err := appJaegerValidate.Errors
+		return nil, fmt.Errorf("LoadJaegerConfig: ошибка валидации настроек связи c Jaeger - %w", err)
 	}
 
 	return config, nil

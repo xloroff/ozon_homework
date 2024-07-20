@@ -2,9 +2,10 @@
 
 package mock
 
-//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli.LomsOrder -o lomsclient_mock.go -n LomsClientMock -p mock
+//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/client/loms_cli.LomsService -o lomsclient_mock.go -n LomsClientMock -p mock
 
 import (
+	"context"
 	"sync"
 	mm_atomic "sync/atomic"
 	mm_time "time"
@@ -13,25 +14,25 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
 )
 
-// LomsClientMock implements lomscli.LomsOrder
+// LomsClientMock implements lomscli.LomsService
 type LomsClientMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
 
-	funcAddOrder          func(userID int64, cart *model.Cart) (i1 int64, err error)
-	inspectFuncAddOrder   func(userID int64, cart *model.Cart)
+	funcAddOrder          func(ctx context.Context, userID int64, cart *model.Cart) (i1 int64, err error)
+	inspectFuncAddOrder   func(ctx context.Context, userID int64, cart *model.Cart)
 	afterAddOrderCounter  uint64
 	beforeAddOrderCounter uint64
 	AddOrderMock          mLomsClientMockAddOrder
 
-	funcStockInfo          func(skuID int64) (u1 uint16, err error)
-	inspectFuncStockInfo   func(skuID int64)
+	funcStockInfo          func(ctx context.Context, skuID int64) (u1 uint16, err error)
+	inspectFuncStockInfo   func(ctx context.Context, skuID int64)
 	afterStockInfoCounter  uint64
 	beforeStockInfoCounter uint64
 	StockInfoMock          mLomsClientMockStockInfo
 }
 
-// NewLomsClientMock returns a mock for lomscli.LomsOrder
+// NewLomsClientMock returns a mock for lomscli.LomsService
 func NewLomsClientMock(t minimock.Tester) *LomsClientMock {
 	m := &LomsClientMock{t: t}
 
@@ -62,7 +63,7 @@ type mLomsClientMockAddOrder struct {
 	expectedInvocations uint64
 }
 
-// LomsClientMockAddOrderExpectation specifies expectation struct of the LomsOrder.AddOrder
+// LomsClientMockAddOrderExpectation specifies expectation struct of the LomsService.AddOrder
 type LomsClientMockAddOrderExpectation struct {
 	mock      *LomsClientMock
 	params    *LomsClientMockAddOrderParams
@@ -71,19 +72,21 @@ type LomsClientMockAddOrderExpectation struct {
 	Counter   uint64
 }
 
-// LomsClientMockAddOrderParams contains parameters of the LomsOrder.AddOrder
+// LomsClientMockAddOrderParams contains parameters of the LomsService.AddOrder
 type LomsClientMockAddOrderParams struct {
+	ctx    context.Context
 	userID int64
 	cart   *model.Cart
 }
 
-// LomsClientMockAddOrderParamPtrs contains pointers to parameters of the LomsOrder.AddOrder
+// LomsClientMockAddOrderParamPtrs contains pointers to parameters of the LomsService.AddOrder
 type LomsClientMockAddOrderParamPtrs struct {
+	ctx    *context.Context
 	userID *int64
 	cart   **model.Cart
 }
 
-// LomsClientMockAddOrderResults contains results of the LomsOrder.AddOrder
+// LomsClientMockAddOrderResults contains results of the LomsService.AddOrder
 type LomsClientMockAddOrderResults struct {
 	i1  int64
 	err error
@@ -99,8 +102,8 @@ func (mmAddOrder *mLomsClientMockAddOrder) Optional() *mLomsClientMockAddOrder {
 	return mmAddOrder
 }
 
-// Expect sets up expected params for LomsOrder.AddOrder
-func (mmAddOrder *mLomsClientMockAddOrder) Expect(userID int64, cart *model.Cart) *mLomsClientMockAddOrder {
+// Expect sets up expected params for LomsService.AddOrder
+func (mmAddOrder *mLomsClientMockAddOrder) Expect(ctx context.Context, userID int64, cart *model.Cart) *mLomsClientMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
 	}
@@ -113,7 +116,7 @@ func (mmAddOrder *mLomsClientMockAddOrder) Expect(userID int64, cart *model.Cart
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by ExpectParams functions")
 	}
 
-	mmAddOrder.defaultExpectation.params = &LomsClientMockAddOrderParams{userID, cart}
+	mmAddOrder.defaultExpectation.params = &LomsClientMockAddOrderParams{ctx, userID, cart}
 	for _, e := range mmAddOrder.expectations {
 		if minimock.Equal(e.params, mmAddOrder.defaultExpectation.params) {
 			mmAddOrder.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmAddOrder.defaultExpectation.params)
@@ -123,8 +126,30 @@ func (mmAddOrder *mLomsClientMockAddOrder) Expect(userID int64, cart *model.Cart
 	return mmAddOrder
 }
 
-// ExpectUserIDParam1 sets up expected param userID for LomsOrder.AddOrder
-func (mmAddOrder *mLomsClientMockAddOrder) ExpectUserIDParam1(userID int64) *mLomsClientMockAddOrder {
+// ExpectCtxParam1 sets up expected param ctx for LomsService.AddOrder
+func (mmAddOrder *mLomsClientMockAddOrder) ExpectCtxParam1(ctx context.Context) *mLomsClientMockAddOrder {
+	if mmAddOrder.mock.funcAddOrder != nil {
+		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
+	}
+
+	if mmAddOrder.defaultExpectation == nil {
+		mmAddOrder.defaultExpectation = &LomsClientMockAddOrderExpectation{}
+	}
+
+	if mmAddOrder.defaultExpectation.params != nil {
+		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Expect")
+	}
+
+	if mmAddOrder.defaultExpectation.paramPtrs == nil {
+		mmAddOrder.defaultExpectation.paramPtrs = &LomsClientMockAddOrderParamPtrs{}
+	}
+	mmAddOrder.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmAddOrder
+}
+
+// ExpectUserIDParam2 sets up expected param userID for LomsService.AddOrder
+func (mmAddOrder *mLomsClientMockAddOrder) ExpectUserIDParam2(userID int64) *mLomsClientMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
 	}
@@ -145,8 +170,8 @@ func (mmAddOrder *mLomsClientMockAddOrder) ExpectUserIDParam1(userID int64) *mLo
 	return mmAddOrder
 }
 
-// ExpectCartParam2 sets up expected param cart for LomsOrder.AddOrder
-func (mmAddOrder *mLomsClientMockAddOrder) ExpectCartParam2(cart *model.Cart) *mLomsClientMockAddOrder {
+// ExpectCartParam3 sets up expected param cart for LomsService.AddOrder
+func (mmAddOrder *mLomsClientMockAddOrder) ExpectCartParam3(cart *model.Cart) *mLomsClientMockAddOrder {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
 	}
@@ -167,8 +192,8 @@ func (mmAddOrder *mLomsClientMockAddOrder) ExpectCartParam2(cart *model.Cart) *m
 	return mmAddOrder
 }
 
-// Inspect accepts an inspector function that has same arguments as the LomsOrder.AddOrder
-func (mmAddOrder *mLomsClientMockAddOrder) Inspect(f func(userID int64, cart *model.Cart)) *mLomsClientMockAddOrder {
+// Inspect accepts an inspector function that has same arguments as the LomsService.AddOrder
+func (mmAddOrder *mLomsClientMockAddOrder) Inspect(f func(ctx context.Context, userID int64, cart *model.Cart)) *mLomsClientMockAddOrder {
 	if mmAddOrder.mock.inspectFuncAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("Inspect function is already set for LomsClientMock.AddOrder")
 	}
@@ -178,7 +203,7 @@ func (mmAddOrder *mLomsClientMockAddOrder) Inspect(f func(userID int64, cart *mo
 	return mmAddOrder
 }
 
-// Return sets up results that will be returned by LomsOrder.AddOrder
+// Return sets up results that will be returned by LomsService.AddOrder
 func (mmAddOrder *mLomsClientMockAddOrder) Return(i1 int64, err error) *LomsClientMock {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
@@ -191,42 +216,42 @@ func (mmAddOrder *mLomsClientMockAddOrder) Return(i1 int64, err error) *LomsClie
 	return mmAddOrder.mock
 }
 
-// Set uses given function f to mock the LomsOrder.AddOrder method
-func (mmAddOrder *mLomsClientMockAddOrder) Set(f func(userID int64, cart *model.Cart) (i1 int64, err error)) *LomsClientMock {
+// Set uses given function f to mock the LomsService.AddOrder method
+func (mmAddOrder *mLomsClientMockAddOrder) Set(f func(ctx context.Context, userID int64, cart *model.Cart) (i1 int64, err error)) *LomsClientMock {
 	if mmAddOrder.defaultExpectation != nil {
-		mmAddOrder.mock.t.Fatalf("Default expectation is already set for the LomsOrder.AddOrder method")
+		mmAddOrder.mock.t.Fatalf("Default expectation is already set for the LomsService.AddOrder method")
 	}
 
 	if len(mmAddOrder.expectations) > 0 {
-		mmAddOrder.mock.t.Fatalf("Some expectations are already set for the LomsOrder.AddOrder method")
+		mmAddOrder.mock.t.Fatalf("Some expectations are already set for the LomsService.AddOrder method")
 	}
 
 	mmAddOrder.mock.funcAddOrder = f
 	return mmAddOrder.mock
 }
 
-// When sets expectation for the LomsOrder.AddOrder which will trigger the result defined by the following
+// When sets expectation for the LomsService.AddOrder which will trigger the result defined by the following
 // Then helper
-func (mmAddOrder *mLomsClientMockAddOrder) When(userID int64, cart *model.Cart) *LomsClientMockAddOrderExpectation {
+func (mmAddOrder *mLomsClientMockAddOrder) When(ctx context.Context, userID int64, cart *model.Cart) *LomsClientMockAddOrderExpectation {
 	if mmAddOrder.mock.funcAddOrder != nil {
 		mmAddOrder.mock.t.Fatalf("LomsClientMock.AddOrder mock is already set by Set")
 	}
 
 	expectation := &LomsClientMockAddOrderExpectation{
 		mock:   mmAddOrder.mock,
-		params: &LomsClientMockAddOrderParams{userID, cart},
+		params: &LomsClientMockAddOrderParams{ctx, userID, cart},
 	}
 	mmAddOrder.expectations = append(mmAddOrder.expectations, expectation)
 	return expectation
 }
 
-// Then sets up LomsOrder.AddOrder return parameters for the expectation previously defined by the When method
+// Then sets up LomsService.AddOrder return parameters for the expectation previously defined by the When method
 func (e *LomsClientMockAddOrderExpectation) Then(i1 int64, err error) *LomsClientMock {
 	e.results = &LomsClientMockAddOrderResults{i1, err}
 	return e.mock
 }
 
-// Times sets number of times LomsOrder.AddOrder should be invoked
+// Times sets number of times LomsService.AddOrder should be invoked
 func (mmAddOrder *mLomsClientMockAddOrder) Times(n uint64) *mLomsClientMockAddOrder {
 	if n == 0 {
 		mmAddOrder.mock.t.Fatalf("Times of LomsClientMock.AddOrder mock can not be zero")
@@ -246,16 +271,16 @@ func (mmAddOrder *mLomsClientMockAddOrder) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// AddOrder implements lomscli.LomsOrder
-func (mmAddOrder *LomsClientMock) AddOrder(userID int64, cart *model.Cart) (i1 int64, err error) {
+// AddOrder implements lomscli.LomsService
+func (mmAddOrder *LomsClientMock) AddOrder(ctx context.Context, userID int64, cart *model.Cart) (i1 int64, err error) {
 	mm_atomic.AddUint64(&mmAddOrder.beforeAddOrderCounter, 1)
 	defer mm_atomic.AddUint64(&mmAddOrder.afterAddOrderCounter, 1)
 
 	if mmAddOrder.inspectFuncAddOrder != nil {
-		mmAddOrder.inspectFuncAddOrder(userID, cart)
+		mmAddOrder.inspectFuncAddOrder(ctx, userID, cart)
 	}
 
-	mm_params := LomsClientMockAddOrderParams{userID, cart}
+	mm_params := LomsClientMockAddOrderParams{ctx, userID, cart}
 
 	// Record call args
 	mmAddOrder.AddOrderMock.mutex.Lock()
@@ -274,9 +299,13 @@ func (mmAddOrder *LomsClientMock) AddOrder(userID int64, cart *model.Cart) (i1 i
 		mm_want := mmAddOrder.AddOrderMock.defaultExpectation.params
 		mm_want_ptrs := mmAddOrder.AddOrderMock.defaultExpectation.paramPtrs
 
-		mm_got := LomsClientMockAddOrderParams{userID, cart}
+		mm_got := LomsClientMockAddOrderParams{ctx, userID, cart}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmAddOrder.t.Errorf("LomsClientMock.AddOrder got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.userID != nil && !minimock.Equal(*mm_want_ptrs.userID, mm_got.userID) {
 				mmAddOrder.t.Errorf("LomsClientMock.AddOrder got unexpected parameter userID, want: %#v, got: %#v%s\n", *mm_want_ptrs.userID, mm_got.userID, minimock.Diff(*mm_want_ptrs.userID, mm_got.userID))
@@ -297,9 +326,9 @@ func (mmAddOrder *LomsClientMock) AddOrder(userID int64, cart *model.Cart) (i1 i
 		return (*mm_results).i1, (*mm_results).err
 	}
 	if mmAddOrder.funcAddOrder != nil {
-		return mmAddOrder.funcAddOrder(userID, cart)
+		return mmAddOrder.funcAddOrder(ctx, userID, cart)
 	}
-	mmAddOrder.t.Fatalf("Unexpected call to LomsClientMock.AddOrder. %v %v", userID, cart)
+	mmAddOrder.t.Fatalf("Unexpected call to LomsClientMock.AddOrder. %v %v %v", ctx, userID, cart)
 	return
 }
 
@@ -383,7 +412,7 @@ type mLomsClientMockStockInfo struct {
 	expectedInvocations uint64
 }
 
-// LomsClientMockStockInfoExpectation specifies expectation struct of the LomsOrder.StockInfo
+// LomsClientMockStockInfoExpectation specifies expectation struct of the LomsService.StockInfo
 type LomsClientMockStockInfoExpectation struct {
 	mock      *LomsClientMock
 	params    *LomsClientMockStockInfoParams
@@ -392,17 +421,19 @@ type LomsClientMockStockInfoExpectation struct {
 	Counter   uint64
 }
 
-// LomsClientMockStockInfoParams contains parameters of the LomsOrder.StockInfo
+// LomsClientMockStockInfoParams contains parameters of the LomsService.StockInfo
 type LomsClientMockStockInfoParams struct {
+	ctx   context.Context
 	skuID int64
 }
 
-// LomsClientMockStockInfoParamPtrs contains pointers to parameters of the LomsOrder.StockInfo
+// LomsClientMockStockInfoParamPtrs contains pointers to parameters of the LomsService.StockInfo
 type LomsClientMockStockInfoParamPtrs struct {
+	ctx   *context.Context
 	skuID *int64
 }
 
-// LomsClientMockStockInfoResults contains results of the LomsOrder.StockInfo
+// LomsClientMockStockInfoResults contains results of the LomsService.StockInfo
 type LomsClientMockStockInfoResults struct {
 	u1  uint16
 	err error
@@ -418,8 +449,8 @@ func (mmStockInfo *mLomsClientMockStockInfo) Optional() *mLomsClientMockStockInf
 	return mmStockInfo
 }
 
-// Expect sets up expected params for LomsOrder.StockInfo
-func (mmStockInfo *mLomsClientMockStockInfo) Expect(skuID int64) *mLomsClientMockStockInfo {
+// Expect sets up expected params for LomsService.StockInfo
+func (mmStockInfo *mLomsClientMockStockInfo) Expect(ctx context.Context, skuID int64) *mLomsClientMockStockInfo {
 	if mmStockInfo.mock.funcStockInfo != nil {
 		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Set")
 	}
@@ -432,7 +463,7 @@ func (mmStockInfo *mLomsClientMockStockInfo) Expect(skuID int64) *mLomsClientMoc
 		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by ExpectParams functions")
 	}
 
-	mmStockInfo.defaultExpectation.params = &LomsClientMockStockInfoParams{skuID}
+	mmStockInfo.defaultExpectation.params = &LomsClientMockStockInfoParams{ctx, skuID}
 	for _, e := range mmStockInfo.expectations {
 		if minimock.Equal(e.params, mmStockInfo.defaultExpectation.params) {
 			mmStockInfo.mock.t.Fatalf("Expectation set by When has same params: %#v", *mmStockInfo.defaultExpectation.params)
@@ -442,8 +473,30 @@ func (mmStockInfo *mLomsClientMockStockInfo) Expect(skuID int64) *mLomsClientMoc
 	return mmStockInfo
 }
 
-// ExpectSkuIDParam1 sets up expected param skuID for LomsOrder.StockInfo
-func (mmStockInfo *mLomsClientMockStockInfo) ExpectSkuIDParam1(skuID int64) *mLomsClientMockStockInfo {
+// ExpectCtxParam1 sets up expected param ctx for LomsService.StockInfo
+func (mmStockInfo *mLomsClientMockStockInfo) ExpectCtxParam1(ctx context.Context) *mLomsClientMockStockInfo {
+	if mmStockInfo.mock.funcStockInfo != nil {
+		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Set")
+	}
+
+	if mmStockInfo.defaultExpectation == nil {
+		mmStockInfo.defaultExpectation = &LomsClientMockStockInfoExpectation{}
+	}
+
+	if mmStockInfo.defaultExpectation.params != nil {
+		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Expect")
+	}
+
+	if mmStockInfo.defaultExpectation.paramPtrs == nil {
+		mmStockInfo.defaultExpectation.paramPtrs = &LomsClientMockStockInfoParamPtrs{}
+	}
+	mmStockInfo.defaultExpectation.paramPtrs.ctx = &ctx
+
+	return mmStockInfo
+}
+
+// ExpectSkuIDParam2 sets up expected param skuID for LomsService.StockInfo
+func (mmStockInfo *mLomsClientMockStockInfo) ExpectSkuIDParam2(skuID int64) *mLomsClientMockStockInfo {
 	if mmStockInfo.mock.funcStockInfo != nil {
 		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Set")
 	}
@@ -464,8 +517,8 @@ func (mmStockInfo *mLomsClientMockStockInfo) ExpectSkuIDParam1(skuID int64) *mLo
 	return mmStockInfo
 }
 
-// Inspect accepts an inspector function that has same arguments as the LomsOrder.StockInfo
-func (mmStockInfo *mLomsClientMockStockInfo) Inspect(f func(skuID int64)) *mLomsClientMockStockInfo {
+// Inspect accepts an inspector function that has same arguments as the LomsService.StockInfo
+func (mmStockInfo *mLomsClientMockStockInfo) Inspect(f func(ctx context.Context, skuID int64)) *mLomsClientMockStockInfo {
 	if mmStockInfo.mock.inspectFuncStockInfo != nil {
 		mmStockInfo.mock.t.Fatalf("Inspect function is already set for LomsClientMock.StockInfo")
 	}
@@ -475,7 +528,7 @@ func (mmStockInfo *mLomsClientMockStockInfo) Inspect(f func(skuID int64)) *mLoms
 	return mmStockInfo
 }
 
-// Return sets up results that will be returned by LomsOrder.StockInfo
+// Return sets up results that will be returned by LomsService.StockInfo
 func (mmStockInfo *mLomsClientMockStockInfo) Return(u1 uint16, err error) *LomsClientMock {
 	if mmStockInfo.mock.funcStockInfo != nil {
 		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Set")
@@ -488,42 +541,42 @@ func (mmStockInfo *mLomsClientMockStockInfo) Return(u1 uint16, err error) *LomsC
 	return mmStockInfo.mock
 }
 
-// Set uses given function f to mock the LomsOrder.StockInfo method
-func (mmStockInfo *mLomsClientMockStockInfo) Set(f func(skuID int64) (u1 uint16, err error)) *LomsClientMock {
+// Set uses given function f to mock the LomsService.StockInfo method
+func (mmStockInfo *mLomsClientMockStockInfo) Set(f func(ctx context.Context, skuID int64) (u1 uint16, err error)) *LomsClientMock {
 	if mmStockInfo.defaultExpectation != nil {
-		mmStockInfo.mock.t.Fatalf("Default expectation is already set for the LomsOrder.StockInfo method")
+		mmStockInfo.mock.t.Fatalf("Default expectation is already set for the LomsService.StockInfo method")
 	}
 
 	if len(mmStockInfo.expectations) > 0 {
-		mmStockInfo.mock.t.Fatalf("Some expectations are already set for the LomsOrder.StockInfo method")
+		mmStockInfo.mock.t.Fatalf("Some expectations are already set for the LomsService.StockInfo method")
 	}
 
 	mmStockInfo.mock.funcStockInfo = f
 	return mmStockInfo.mock
 }
 
-// When sets expectation for the LomsOrder.StockInfo which will trigger the result defined by the following
+// When sets expectation for the LomsService.StockInfo which will trigger the result defined by the following
 // Then helper
-func (mmStockInfo *mLomsClientMockStockInfo) When(skuID int64) *LomsClientMockStockInfoExpectation {
+func (mmStockInfo *mLomsClientMockStockInfo) When(ctx context.Context, skuID int64) *LomsClientMockStockInfoExpectation {
 	if mmStockInfo.mock.funcStockInfo != nil {
 		mmStockInfo.mock.t.Fatalf("LomsClientMock.StockInfo mock is already set by Set")
 	}
 
 	expectation := &LomsClientMockStockInfoExpectation{
 		mock:   mmStockInfo.mock,
-		params: &LomsClientMockStockInfoParams{skuID},
+		params: &LomsClientMockStockInfoParams{ctx, skuID},
 	}
 	mmStockInfo.expectations = append(mmStockInfo.expectations, expectation)
 	return expectation
 }
 
-// Then sets up LomsOrder.StockInfo return parameters for the expectation previously defined by the When method
+// Then sets up LomsService.StockInfo return parameters for the expectation previously defined by the When method
 func (e *LomsClientMockStockInfoExpectation) Then(u1 uint16, err error) *LomsClientMock {
 	e.results = &LomsClientMockStockInfoResults{u1, err}
 	return e.mock
 }
 
-// Times sets number of times LomsOrder.StockInfo should be invoked
+// Times sets number of times LomsService.StockInfo should be invoked
 func (mmStockInfo *mLomsClientMockStockInfo) Times(n uint64) *mLomsClientMockStockInfo {
 	if n == 0 {
 		mmStockInfo.mock.t.Fatalf("Times of LomsClientMock.StockInfo mock can not be zero")
@@ -543,16 +596,16 @@ func (mmStockInfo *mLomsClientMockStockInfo) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// StockInfo implements lomscli.LomsOrder
-func (mmStockInfo *LomsClientMock) StockInfo(skuID int64) (u1 uint16, err error) {
+// StockInfo implements lomscli.LomsService
+func (mmStockInfo *LomsClientMock) StockInfo(ctx context.Context, skuID int64) (u1 uint16, err error) {
 	mm_atomic.AddUint64(&mmStockInfo.beforeStockInfoCounter, 1)
 	defer mm_atomic.AddUint64(&mmStockInfo.afterStockInfoCounter, 1)
 
 	if mmStockInfo.inspectFuncStockInfo != nil {
-		mmStockInfo.inspectFuncStockInfo(skuID)
+		mmStockInfo.inspectFuncStockInfo(ctx, skuID)
 	}
 
-	mm_params := LomsClientMockStockInfoParams{skuID}
+	mm_params := LomsClientMockStockInfoParams{ctx, skuID}
 
 	// Record call args
 	mmStockInfo.StockInfoMock.mutex.Lock()
@@ -571,9 +624,13 @@ func (mmStockInfo *LomsClientMock) StockInfo(skuID int64) (u1 uint16, err error)
 		mm_want := mmStockInfo.StockInfoMock.defaultExpectation.params
 		mm_want_ptrs := mmStockInfo.StockInfoMock.defaultExpectation.paramPtrs
 
-		mm_got := LomsClientMockStockInfoParams{skuID}
+		mm_got := LomsClientMockStockInfoParams{ctx, skuID}
 
 		if mm_want_ptrs != nil {
+
+			if mm_want_ptrs.ctx != nil && !minimock.Equal(*mm_want_ptrs.ctx, mm_got.ctx) {
+				mmStockInfo.t.Errorf("LomsClientMock.StockInfo got unexpected parameter ctx, want: %#v, got: %#v%s\n", *mm_want_ptrs.ctx, mm_got.ctx, minimock.Diff(*mm_want_ptrs.ctx, mm_got.ctx))
+			}
 
 			if mm_want_ptrs.skuID != nil && !minimock.Equal(*mm_want_ptrs.skuID, mm_got.skuID) {
 				mmStockInfo.t.Errorf("LomsClientMock.StockInfo got unexpected parameter skuID, want: %#v, got: %#v%s\n", *mm_want_ptrs.skuID, mm_got.skuID, minimock.Diff(*mm_want_ptrs.skuID, mm_got.skuID))
@@ -590,9 +647,9 @@ func (mmStockInfo *LomsClientMock) StockInfo(skuID int64) (u1 uint16, err error)
 		return (*mm_results).u1, (*mm_results).err
 	}
 	if mmStockInfo.funcStockInfo != nil {
-		return mmStockInfo.funcStockInfo(skuID)
+		return mmStockInfo.funcStockInfo(ctx, skuID)
 	}
-	mmStockInfo.t.Fatalf("Unexpected call to LomsClientMock.StockInfo. %v", skuID)
+	mmStockInfo.t.Fatalf("Unexpected call to LomsClientMock.StockInfo. %v %v", ctx, skuID)
 	return
 }
 

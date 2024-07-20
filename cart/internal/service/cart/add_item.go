@@ -5,33 +5,46 @@ import (
 	"fmt"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/tracer"
 )
 
 // AddItem добавление итема пользователю через сервис, вызов клиента для связи с сервисом продуктов и обращение к сервису хранения.
 func (s *cService) AddItem(ctx context.Context, item *model.AddItem) error {
+	ctx, span := tracer.StartSpanFromContext(ctx, "service.cart.add_item")
+	span.SetTag("component", "cart")
+	defer span.End()
+
 	s.logger.Info(ctx, fmt.Sprintf("cartService.AddItem: начинаю добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
 	defer s.logger.Info(ctx, fmt.Sprintf("cartService.AddItem: закончил добавление продукта userId: %d, skuID: %d, count: %v", item.UserID, item.SkuID, item.Count))
 
 	_, err := s.productCli.GetProduct(ctx, item.SkuID)
 	if err != nil {
+		span.SetTag("error", true)
 		s.logger.Errorf(ctx, "cartService.AddItem: ошибка получения продукта %v - %v", item.SkuID, err)
+
 		return fmt.Errorf("Ошибка получения продукта %d - %w", item.SkuID, err)
 	}
 
-	availableStock, err := s.lomsCli.StockInfo(item.SkuID)
+	availableStock, err := s.lomsCli.StockInfo(ctx, item.SkuID)
 	if err != nil {
+		span.SetTag("error", true)
 		s.logger.Errorf(ctx, "cartService.AddItem: ошибка получения остатков товара %v - %v", item.SkuID, err)
+
 		return fmt.Errorf("Ошибка получения остатков товара %d - %w", item.SkuID, err)
 	}
 
 	if availableStock < item.Count {
+		span.SetTag("error", true)
 		s.logger.Errorf(ctx, "cartService.AddItem: невозможно добавить довар %v - запрошено %v, остаток %v", item.SkuID, item.Count, availableStock)
+
 		return fmt.Errorf("Невозможно добавить довар %d - запрошено %d, остаток %d - %w", item.SkuID, item.Count, availableStock, model.ErrDontHaveReserveCount)
 	}
 
 	err = s.cartStore.AddItem(ctx, item)
 	if err != nil {
+		span.SetTag("error", true)
 		s.logger.Errorf(ctx, "cartService.AddItem: ошибка добавления продукта %v - %v", item.SkuID, err)
+
 		return fmt.Errorf("Ошибка добавления продукта %d - %w", item.SkuID, err)
 	}
 

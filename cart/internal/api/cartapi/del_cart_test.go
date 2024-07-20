@@ -52,7 +52,7 @@ func TestDelCartTable(t *testing.T) {
 			userID:      1,
 			count:       1,
 			errService:  errors.New("Ошибка удаления"),
-			wantCodeAns: http.StatusBadRequest,
+			wantCodeAns: http.StatusPreconditionFailed,
 		},
 	}
 

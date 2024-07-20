@@ -13,6 +13,7 @@ type ApplicationParameters struct {
 	*AppSettings
 	*ProductServiceSettings
 	*LomsServiceSettings
+	*JaegerSettings
 }
 
 // AppSettings отвечает за настройки приложения.
@@ -36,6 +37,12 @@ type LomsServiceSettings struct {
 	ProductServicePort int    `mapstructure:"LOMS_PORT" validate:"required|int|min:80" message:"Указание порта \"LOMS_PORT\" на котором будет запущен сервис - обязательно"`
 }
 
+// JaegerSettings отвечает за настройки отправки трейсов.
+type JaegerSettings struct {
+	JaegerHost string `mapstructure:"JAEGER_HOST" validate:"required|min_len:2" message:"Указание хоста для отправки трейсов \"JAEGER_HOST\" обязательно для передачи через параметры окружения"`
+	JaegerPort string `mapstructure:"JAEGER_PORT" validate:"required|min_len:2" message:"Указание порта для отправки трейсов \"JAEGER_PORT\" обязательно для передачи через параметры окружения"`
+}
+
 // LoadAPIConfig грузит настройки для API.
 func LoadAPIConfig() (*ApplicationParameters, error) {
 	appSettings, err := loadAppConfig()
@@ -53,10 +60,16 @@ func LoadAPIConfig() (*ApplicationParameters, error) {
 		return nil, err
 	}
 
+	jaegerSettings, err := loadJaegerConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	config := &ApplicationParameters{}
 	config.AppSettings = appSettings
 	config.ProductServiceSettings = productSettings
 	config.LomsServiceSettings = lomsSettings
+	config.JaegerSettings = jaegerSettings
 
 	return config, nil
 }
@@ -149,6 +162,23 @@ func loadLomsSettings() (*LomsServiceSettings, error) {
 	if !appSettingValidate.Validate() {
 		err = appSettingValidate.Errors
 		return nil, fmt.Errorf("LoadAPIConfig: ошибка валидации параметров связи с сервисом заказов - %w", err)
+	}
+
+	return config, nil
+}
+
+// loadJaegerConfig грузит настройки подключения к Jaeger.
+func loadJaegerConfig() (*JaegerSettings, error) {
+	config := &JaegerSettings{}
+
+	config.JaegerHost = os.Getenv("JAEGER_HOST")
+	config.JaegerPort = os.Getenv("JAEGER_PORT")
+
+	// Валидируем конфигурацию.
+	appJaegerValidate := validate.Struct(config)
+	if !appJaegerValidate.Validate() {
+		err := appJaegerValidate.Errors
+		return nil, fmt.Errorf("LoadJaegerConfig: ошибка валидации настроек связи c Jaeger - %w", err)
 	}
 
 	return config, nil

@@ -16,6 +16,18 @@ run-e2e-dev:
 run-all-test:
 	docker-compose --env-file .env.test up -d loms
 
+run-monitoring:
+	docker-compose up -d prometheus grafana jaeger
+
+run-monitoring-dev:
+	docker-compose --env-file .env --env-file .env.dev up -d prometheus grafana jaeger
+
+run-kafka-ui-dev:
+	docker-compose --env-file .env --env-file .env.dev up kafka-ui
+
+run-kafka-ui:
+	docker-compose --env-file .env --env-file .env.dev up -d kafka-ui
+
 run:
 	docker-compose up -d
 

@@ -11,21 +11,21 @@ import (
 
 // Service заведем как сервис под апи.
 type Service interface {
-	Create(user int64, items model.AllNeedReserve) (int64, error)
-	Cancel(orderID int64) error
-	Info(orderID int64) (*model.Order, error)
-	Pay(orderID int64) error
+	Create(ctx context.Context, user int64, items model.AllNeedReserve) (int64, error)
+	Cancel(ctx context.Context, orderID int64) error
+	Info(ctx context.Context, orderID int64) (*model.Order, error)
+	Pay(ctx context.Context, orderID int64) error
 }
 
 type oService struct {
 	ctx        context.Context
 	orderStore orderstore.Storage
 	stockStore stockstore.Storage
-	logger     logger.ILog
+	logger     logger.Logger
 }
 
 // NewService создает новый сервис LOMS с хранилищами резервов и хранилищем заказов.
-func NewService(ctx context.Context, l logger.ILog, os orderstore.Storage, ss stockstore.Storage) Service {
+func NewService(ctx context.Context, l logger.Logger, os orderstore.Storage, ss stockstore.Storage) Service {
 	return &oService{
 		ctx:        ctx,
 		orderStore: os,

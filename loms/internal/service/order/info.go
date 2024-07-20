@@ -1,16 +1,24 @@
 package orderservice
 
 import (
+	"context"
 	"fmt"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/tracer"
 )
 
 // Info возвращает информацию о заказе.
-func (s *oService) Info(orderID int64) (*model.Order, error) {
-	order, err := s.orderStore.GetOrder(orderID)
+func (s *oService) Info(ctx context.Context, orderID int64) (*model.Order, error) {
+	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.info")
+	span.SetTag("component", "orderservice")
+
+	defer span.End()
+
+	order, err := s.orderStore.GetOrder(ctx, orderID)
 	if err != nil {
-		s.logger.Debugf(s.ctx, "OrderService.Info: Ошибка получения заказа - %v", err)
+		span.SetTag("error", true)
+		s.logger.Debugf(ctx, "OrderService.Info: Ошибка получения заказа - %v", err)
 
 		return nil, fmt.Errorf("Ошибка получения заказа - %w", err)
 	}

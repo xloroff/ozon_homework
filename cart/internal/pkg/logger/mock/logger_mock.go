@@ -2,7 +2,7 @@
 
 package mock
 
-//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger.ILog -o logger_mock.go -n LoggerMock -p mock
+//go:generate minimock -i gitlab.ozon.dev/xloroff/ozon-hw-go/cart/internal/pkg/logger.Logger -o logger_mock.go -n LoggerMock -p mock
 
 import (
 	"context"
@@ -13,7 +13,7 @@ import (
 	"github.com/gojuno/minimock/v3"
 )
 
-// LoggerMock implements logger.ILog
+// LoggerMock implements logger.Logger
 type LoggerMock struct {
 	t          minimock.Tester
 	finishOnce sync.Once
@@ -97,7 +97,7 @@ type LoggerMock struct {
 	WarnfMock          mLoggerMockWarnf
 }
 
-// NewLoggerMock returns a mock for logger.ILog
+// NewLoggerMock returns a mock for logger.Logger
 func NewLoggerMock(t minimock.Tester) *LoggerMock {
 	m := &LoggerMock{t: t}
 
@@ -157,7 +157,7 @@ type mLoggerMockClose struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockCloseExpectation specifies expectation struct of the ILog.Close
+// LoggerMockCloseExpectation specifies expectation struct of the Logger.Close
 type LoggerMockCloseExpectation struct {
 	mock *LoggerMock
 
@@ -165,7 +165,7 @@ type LoggerMockCloseExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockCloseResults contains results of the ILog.Close
+// LoggerMockCloseResults contains results of the Logger.Close
 type LoggerMockCloseResults struct {
 	err error
 }
@@ -180,7 +180,7 @@ func (mmClose *mLoggerMockClose) Optional() *mLoggerMockClose {
 	return mmClose
 }
 
-// Expect sets up expected params for ILog.Close
+// Expect sets up expected params for Logger.Close
 func (mmClose *mLoggerMockClose) Expect() *mLoggerMockClose {
 	if mmClose.mock.funcClose != nil {
 		mmClose.mock.t.Fatalf("LoggerMock.Close mock is already set by Set")
@@ -193,7 +193,7 @@ func (mmClose *mLoggerMockClose) Expect() *mLoggerMockClose {
 	return mmClose
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Close
+// Inspect accepts an inspector function that has same arguments as the Logger.Close
 func (mmClose *mLoggerMockClose) Inspect(f func()) *mLoggerMockClose {
 	if mmClose.mock.inspectFuncClose != nil {
 		mmClose.mock.t.Fatalf("Inspect function is already set for LoggerMock.Close")
@@ -204,7 +204,7 @@ func (mmClose *mLoggerMockClose) Inspect(f func()) *mLoggerMockClose {
 	return mmClose
 }
 
-// Return sets up results that will be returned by ILog.Close
+// Return sets up results that will be returned by Logger.Close
 func (mmClose *mLoggerMockClose) Return(err error) *LoggerMock {
 	if mmClose.mock.funcClose != nil {
 		mmClose.mock.t.Fatalf("LoggerMock.Close mock is already set by Set")
@@ -217,21 +217,21 @@ func (mmClose *mLoggerMockClose) Return(err error) *LoggerMock {
 	return mmClose.mock
 }
 
-// Set uses given function f to mock the ILog.Close method
+// Set uses given function f to mock the Logger.Close method
 func (mmClose *mLoggerMockClose) Set(f func() (err error)) *LoggerMock {
 	if mmClose.defaultExpectation != nil {
-		mmClose.mock.t.Fatalf("Default expectation is already set for the ILog.Close method")
+		mmClose.mock.t.Fatalf("Default expectation is already set for the Logger.Close method")
 	}
 
 	if len(mmClose.expectations) > 0 {
-		mmClose.mock.t.Fatalf("Some expectations are already set for the ILog.Close method")
+		mmClose.mock.t.Fatalf("Some expectations are already set for the Logger.Close method")
 	}
 
 	mmClose.mock.funcClose = f
 	return mmClose.mock
 }
 
-// Times sets number of times ILog.Close should be invoked
+// Times sets number of times Logger.Close should be invoked
 func (mmClose *mLoggerMockClose) Times(n uint64) *mLoggerMockClose {
 	if n == 0 {
 		mmClose.mock.t.Fatalf("Times of LoggerMock.Close mock can not be zero")
@@ -251,7 +251,7 @@ func (mmClose *mLoggerMockClose) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Close implements logger.ILog
+// Close implements logger.Logger
 func (mmClose *LoggerMock) Close() (err error) {
 	mm_atomic.AddUint64(&mmClose.beforeCloseCounter, 1)
 	defer mm_atomic.AddUint64(&mmClose.afterCloseCounter, 1)
@@ -339,7 +339,7 @@ type mLoggerMockDebug struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockDebugExpectation specifies expectation struct of the ILog.Debug
+// LoggerMockDebugExpectation specifies expectation struct of the Logger.Debug
 type LoggerMockDebugExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockDebugParams
@@ -348,13 +348,13 @@ type LoggerMockDebugExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockDebugParams contains parameters of the ILog.Debug
+// LoggerMockDebugParams contains parameters of the Logger.Debug
 type LoggerMockDebugParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockDebugParamPtrs contains pointers to parameters of the ILog.Debug
+// LoggerMockDebugParamPtrs contains pointers to parameters of the Logger.Debug
 type LoggerMockDebugParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -370,7 +370,7 @@ func (mmDebug *mLoggerMockDebug) Optional() *mLoggerMockDebug {
 	return mmDebug
 }
 
-// Expect sets up expected params for ILog.Debug
+// Expect sets up expected params for Logger.Debug
 func (mmDebug *mLoggerMockDebug) Expect(ctx context.Context, m string) *mLoggerMockDebug {
 	if mmDebug.mock.funcDebug != nil {
 		mmDebug.mock.t.Fatalf("LoggerMock.Debug mock is already set by Set")
@@ -394,7 +394,7 @@ func (mmDebug *mLoggerMockDebug) Expect(ctx context.Context, m string) *mLoggerM
 	return mmDebug
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Debug
+// ExpectCtxParam1 sets up expected param ctx for Logger.Debug
 func (mmDebug *mLoggerMockDebug) ExpectCtxParam1(ctx context.Context) *mLoggerMockDebug {
 	if mmDebug.mock.funcDebug != nil {
 		mmDebug.mock.t.Fatalf("LoggerMock.Debug mock is already set by Set")
@@ -416,7 +416,7 @@ func (mmDebug *mLoggerMockDebug) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmDebug
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Debug
+// ExpectMParam2 sets up expected param m for Logger.Debug
 func (mmDebug *mLoggerMockDebug) ExpectMParam2(m string) *mLoggerMockDebug {
 	if mmDebug.mock.funcDebug != nil {
 		mmDebug.mock.t.Fatalf("LoggerMock.Debug mock is already set by Set")
@@ -438,7 +438,7 @@ func (mmDebug *mLoggerMockDebug) ExpectMParam2(m string) *mLoggerMockDebug {
 	return mmDebug
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Debug
+// Inspect accepts an inspector function that has same arguments as the Logger.Debug
 func (mmDebug *mLoggerMockDebug) Inspect(f func(ctx context.Context, m string)) *mLoggerMockDebug {
 	if mmDebug.mock.inspectFuncDebug != nil {
 		mmDebug.mock.t.Fatalf("Inspect function is already set for LoggerMock.Debug")
@@ -449,7 +449,7 @@ func (mmDebug *mLoggerMockDebug) Inspect(f func(ctx context.Context, m string)) 
 	return mmDebug
 }
 
-// Return sets up results that will be returned by ILog.Debug
+// Return sets up results that will be returned by Logger.Debug
 func (mmDebug *mLoggerMockDebug) Return() *LoggerMock {
 	if mmDebug.mock.funcDebug != nil {
 		mmDebug.mock.t.Fatalf("LoggerMock.Debug mock is already set by Set")
@@ -462,21 +462,21 @@ func (mmDebug *mLoggerMockDebug) Return() *LoggerMock {
 	return mmDebug.mock
 }
 
-// Set uses given function f to mock the ILog.Debug method
+// Set uses given function f to mock the Logger.Debug method
 func (mmDebug *mLoggerMockDebug) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmDebug.defaultExpectation != nil {
-		mmDebug.mock.t.Fatalf("Default expectation is already set for the ILog.Debug method")
+		mmDebug.mock.t.Fatalf("Default expectation is already set for the Logger.Debug method")
 	}
 
 	if len(mmDebug.expectations) > 0 {
-		mmDebug.mock.t.Fatalf("Some expectations are already set for the ILog.Debug method")
+		mmDebug.mock.t.Fatalf("Some expectations are already set for the Logger.Debug method")
 	}
 
 	mmDebug.mock.funcDebug = f
 	return mmDebug.mock
 }
 
-// Times sets number of times ILog.Debug should be invoked
+// Times sets number of times Logger.Debug should be invoked
 func (mmDebug *mLoggerMockDebug) Times(n uint64) *mLoggerMockDebug {
 	if n == 0 {
 		mmDebug.mock.t.Fatalf("Times of LoggerMock.Debug mock can not be zero")
@@ -496,7 +496,7 @@ func (mmDebug *mLoggerMockDebug) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Debug implements logger.ILog
+// Debug implements logger.Logger
 func (mmDebug *LoggerMock) Debug(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmDebug.beforeDebugCounter, 1)
 	defer mm_atomic.AddUint64(&mmDebug.afterDebugCounter, 1)
@@ -631,7 +631,7 @@ type mLoggerMockDebugf struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockDebugfExpectation specifies expectation struct of the ILog.Debugf
+// LoggerMockDebugfExpectation specifies expectation struct of the Logger.Debugf
 type LoggerMockDebugfExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockDebugfParams
@@ -640,14 +640,14 @@ type LoggerMockDebugfExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockDebugfParams contains parameters of the ILog.Debugf
+// LoggerMockDebugfParams contains parameters of the Logger.Debugf
 type LoggerMockDebugfParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockDebugfParamPtrs contains pointers to parameters of the ILog.Debugf
+// LoggerMockDebugfParamPtrs contains pointers to parameters of the Logger.Debugf
 type LoggerMockDebugfParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -664,7 +664,7 @@ func (mmDebugf *mLoggerMockDebugf) Optional() *mLoggerMockDebugf {
 	return mmDebugf
 }
 
-// Expect sets up expected params for ILog.Debugf
+// Expect sets up expected params for Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) Expect(ctx context.Context, m string, args ...any) *mLoggerMockDebugf {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
@@ -688,7 +688,7 @@ func (mmDebugf *mLoggerMockDebugf) Expect(ctx context.Context, m string, args ..
 	return mmDebugf
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Debugf
+// ExpectCtxParam1 sets up expected param ctx for Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) ExpectCtxParam1(ctx context.Context) *mLoggerMockDebugf {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
@@ -710,7 +710,7 @@ func (mmDebugf *mLoggerMockDebugf) ExpectCtxParam1(ctx context.Context) *mLogger
 	return mmDebugf
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Debugf
+// ExpectMParam2 sets up expected param m for Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) ExpectMParam2(m string) *mLoggerMockDebugf {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
@@ -732,7 +732,7 @@ func (mmDebugf *mLoggerMockDebugf) ExpectMParam2(m string) *mLoggerMockDebugf {
 	return mmDebugf
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Debugf
+// ExpectArgsParam3 sets up expected param args for Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) ExpectArgsParam3(args ...any) *mLoggerMockDebugf {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
@@ -754,7 +754,7 @@ func (mmDebugf *mLoggerMockDebugf) ExpectArgsParam3(args ...any) *mLoggerMockDeb
 	return mmDebugf
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Debugf
+// Inspect accepts an inspector function that has same arguments as the Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockDebugf {
 	if mmDebugf.mock.inspectFuncDebugf != nil {
 		mmDebugf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Debugf")
@@ -765,7 +765,7 @@ func (mmDebugf *mLoggerMockDebugf) Inspect(f func(ctx context.Context, m string,
 	return mmDebugf
 }
 
-// Return sets up results that will be returned by ILog.Debugf
+// Return sets up results that will be returned by Logger.Debugf
 func (mmDebugf *mLoggerMockDebugf) Return() *LoggerMock {
 	if mmDebugf.mock.funcDebugf != nil {
 		mmDebugf.mock.t.Fatalf("LoggerMock.Debugf mock is already set by Set")
@@ -778,21 +778,21 @@ func (mmDebugf *mLoggerMockDebugf) Return() *LoggerMock {
 	return mmDebugf.mock
 }
 
-// Set uses given function f to mock the ILog.Debugf method
+// Set uses given function f to mock the Logger.Debugf method
 func (mmDebugf *mLoggerMockDebugf) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmDebugf.defaultExpectation != nil {
-		mmDebugf.mock.t.Fatalf("Default expectation is already set for the ILog.Debugf method")
+		mmDebugf.mock.t.Fatalf("Default expectation is already set for the Logger.Debugf method")
 	}
 
 	if len(mmDebugf.expectations) > 0 {
-		mmDebugf.mock.t.Fatalf("Some expectations are already set for the ILog.Debugf method")
+		mmDebugf.mock.t.Fatalf("Some expectations are already set for the Logger.Debugf method")
 	}
 
 	mmDebugf.mock.funcDebugf = f
 	return mmDebugf.mock
 }
 
-// Times sets number of times ILog.Debugf should be invoked
+// Times sets number of times Logger.Debugf should be invoked
 func (mmDebugf *mLoggerMockDebugf) Times(n uint64) *mLoggerMockDebugf {
 	if n == 0 {
 		mmDebugf.mock.t.Fatalf("Times of LoggerMock.Debugf mock can not be zero")
@@ -812,7 +812,7 @@ func (mmDebugf *mLoggerMockDebugf) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Debugf implements logger.ILog
+// Debugf implements logger.Logger
 func (mmDebugf *LoggerMock) Debugf(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmDebugf.beforeDebugfCounter, 1)
 	defer mm_atomic.AddUint64(&mmDebugf.afterDebugfCounter, 1)
@@ -951,7 +951,7 @@ type mLoggerMockError struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockErrorExpectation specifies expectation struct of the ILog.Error
+// LoggerMockErrorExpectation specifies expectation struct of the Logger.Error
 type LoggerMockErrorExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockErrorParams
@@ -960,13 +960,13 @@ type LoggerMockErrorExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockErrorParams contains parameters of the ILog.Error
+// LoggerMockErrorParams contains parameters of the Logger.Error
 type LoggerMockErrorParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockErrorParamPtrs contains pointers to parameters of the ILog.Error
+// LoggerMockErrorParamPtrs contains pointers to parameters of the Logger.Error
 type LoggerMockErrorParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -982,7 +982,7 @@ func (mmError *mLoggerMockError) Optional() *mLoggerMockError {
 	return mmError
 }
 
-// Expect sets up expected params for ILog.Error
+// Expect sets up expected params for Logger.Error
 func (mmError *mLoggerMockError) Expect(ctx context.Context, m string) *mLoggerMockError {
 	if mmError.mock.funcError != nil {
 		mmError.mock.t.Fatalf("LoggerMock.Error mock is already set by Set")
@@ -1006,7 +1006,7 @@ func (mmError *mLoggerMockError) Expect(ctx context.Context, m string) *mLoggerM
 	return mmError
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Error
+// ExpectCtxParam1 sets up expected param ctx for Logger.Error
 func (mmError *mLoggerMockError) ExpectCtxParam1(ctx context.Context) *mLoggerMockError {
 	if mmError.mock.funcError != nil {
 		mmError.mock.t.Fatalf("LoggerMock.Error mock is already set by Set")
@@ -1028,7 +1028,7 @@ func (mmError *mLoggerMockError) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmError
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Error
+// ExpectMParam2 sets up expected param m for Logger.Error
 func (mmError *mLoggerMockError) ExpectMParam2(m string) *mLoggerMockError {
 	if mmError.mock.funcError != nil {
 		mmError.mock.t.Fatalf("LoggerMock.Error mock is already set by Set")
@@ -1050,7 +1050,7 @@ func (mmError *mLoggerMockError) ExpectMParam2(m string) *mLoggerMockError {
 	return mmError
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Error
+// Inspect accepts an inspector function that has same arguments as the Logger.Error
 func (mmError *mLoggerMockError) Inspect(f func(ctx context.Context, m string)) *mLoggerMockError {
 	if mmError.mock.inspectFuncError != nil {
 		mmError.mock.t.Fatalf("Inspect function is already set for LoggerMock.Error")
@@ -1061,7 +1061,7 @@ func (mmError *mLoggerMockError) Inspect(f func(ctx context.Context, m string)) 
 	return mmError
 }
 
-// Return sets up results that will be returned by ILog.Error
+// Return sets up results that will be returned by Logger.Error
 func (mmError *mLoggerMockError) Return() *LoggerMock {
 	if mmError.mock.funcError != nil {
 		mmError.mock.t.Fatalf("LoggerMock.Error mock is already set by Set")
@@ -1074,21 +1074,21 @@ func (mmError *mLoggerMockError) Return() *LoggerMock {
 	return mmError.mock
 }
 
-// Set uses given function f to mock the ILog.Error method
+// Set uses given function f to mock the Logger.Error method
 func (mmError *mLoggerMockError) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmError.defaultExpectation != nil {
-		mmError.mock.t.Fatalf("Default expectation is already set for the ILog.Error method")
+		mmError.mock.t.Fatalf("Default expectation is already set for the Logger.Error method")
 	}
 
 	if len(mmError.expectations) > 0 {
-		mmError.mock.t.Fatalf("Some expectations are already set for the ILog.Error method")
+		mmError.mock.t.Fatalf("Some expectations are already set for the Logger.Error method")
 	}
 
 	mmError.mock.funcError = f
 	return mmError.mock
 }
 
-// Times sets number of times ILog.Error should be invoked
+// Times sets number of times Logger.Error should be invoked
 func (mmError *mLoggerMockError) Times(n uint64) *mLoggerMockError {
 	if n == 0 {
 		mmError.mock.t.Fatalf("Times of LoggerMock.Error mock can not be zero")
@@ -1108,7 +1108,7 @@ func (mmError *mLoggerMockError) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Error implements logger.ILog
+// Error implements logger.Logger
 func (mmError *LoggerMock) Error(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmError.beforeErrorCounter, 1)
 	defer mm_atomic.AddUint64(&mmError.afterErrorCounter, 1)
@@ -1243,7 +1243,7 @@ type mLoggerMockErrorf struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockErrorfExpectation specifies expectation struct of the ILog.Errorf
+// LoggerMockErrorfExpectation specifies expectation struct of the Logger.Errorf
 type LoggerMockErrorfExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockErrorfParams
@@ -1252,14 +1252,14 @@ type LoggerMockErrorfExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockErrorfParams contains parameters of the ILog.Errorf
+// LoggerMockErrorfParams contains parameters of the Logger.Errorf
 type LoggerMockErrorfParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockErrorfParamPtrs contains pointers to parameters of the ILog.Errorf
+// LoggerMockErrorfParamPtrs contains pointers to parameters of the Logger.Errorf
 type LoggerMockErrorfParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -1276,7 +1276,7 @@ func (mmErrorf *mLoggerMockErrorf) Optional() *mLoggerMockErrorf {
 	return mmErrorf
 }
 
-// Expect sets up expected params for ILog.Errorf
+// Expect sets up expected params for Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) Expect(ctx context.Context, m string, args ...any) *mLoggerMockErrorf {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
@@ -1300,7 +1300,7 @@ func (mmErrorf *mLoggerMockErrorf) Expect(ctx context.Context, m string, args ..
 	return mmErrorf
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Errorf
+// ExpectCtxParam1 sets up expected param ctx for Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) ExpectCtxParam1(ctx context.Context) *mLoggerMockErrorf {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
@@ -1322,7 +1322,7 @@ func (mmErrorf *mLoggerMockErrorf) ExpectCtxParam1(ctx context.Context) *mLogger
 	return mmErrorf
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Errorf
+// ExpectMParam2 sets up expected param m for Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) ExpectMParam2(m string) *mLoggerMockErrorf {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
@@ -1344,7 +1344,7 @@ func (mmErrorf *mLoggerMockErrorf) ExpectMParam2(m string) *mLoggerMockErrorf {
 	return mmErrorf
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Errorf
+// ExpectArgsParam3 sets up expected param args for Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) ExpectArgsParam3(args ...any) *mLoggerMockErrorf {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
@@ -1366,7 +1366,7 @@ func (mmErrorf *mLoggerMockErrorf) ExpectArgsParam3(args ...any) *mLoggerMockErr
 	return mmErrorf
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Errorf
+// Inspect accepts an inspector function that has same arguments as the Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockErrorf {
 	if mmErrorf.mock.inspectFuncErrorf != nil {
 		mmErrorf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Errorf")
@@ -1377,7 +1377,7 @@ func (mmErrorf *mLoggerMockErrorf) Inspect(f func(ctx context.Context, m string,
 	return mmErrorf
 }
 
-// Return sets up results that will be returned by ILog.Errorf
+// Return sets up results that will be returned by Logger.Errorf
 func (mmErrorf *mLoggerMockErrorf) Return() *LoggerMock {
 	if mmErrorf.mock.funcErrorf != nil {
 		mmErrorf.mock.t.Fatalf("LoggerMock.Errorf mock is already set by Set")
@@ -1390,21 +1390,21 @@ func (mmErrorf *mLoggerMockErrorf) Return() *LoggerMock {
 	return mmErrorf.mock
 }
 
-// Set uses given function f to mock the ILog.Errorf method
+// Set uses given function f to mock the Logger.Errorf method
 func (mmErrorf *mLoggerMockErrorf) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmErrorf.defaultExpectation != nil {
-		mmErrorf.mock.t.Fatalf("Default expectation is already set for the ILog.Errorf method")
+		mmErrorf.mock.t.Fatalf("Default expectation is already set for the Logger.Errorf method")
 	}
 
 	if len(mmErrorf.expectations) > 0 {
-		mmErrorf.mock.t.Fatalf("Some expectations are already set for the ILog.Errorf method")
+		mmErrorf.mock.t.Fatalf("Some expectations are already set for the Logger.Errorf method")
 	}
 
 	mmErrorf.mock.funcErrorf = f
 	return mmErrorf.mock
 }
 
-// Times sets number of times ILog.Errorf should be invoked
+// Times sets number of times Logger.Errorf should be invoked
 func (mmErrorf *mLoggerMockErrorf) Times(n uint64) *mLoggerMockErrorf {
 	if n == 0 {
 		mmErrorf.mock.t.Fatalf("Times of LoggerMock.Errorf mock can not be zero")
@@ -1424,7 +1424,7 @@ func (mmErrorf *mLoggerMockErrorf) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Errorf implements logger.ILog
+// Errorf implements logger.Logger
 func (mmErrorf *LoggerMock) Errorf(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmErrorf.beforeErrorfCounter, 1)
 	defer mm_atomic.AddUint64(&mmErrorf.afterErrorfCounter, 1)
@@ -1563,7 +1563,7 @@ type mLoggerMockFatal struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockFatalExpectation specifies expectation struct of the ILog.Fatal
+// LoggerMockFatalExpectation specifies expectation struct of the Logger.Fatal
 type LoggerMockFatalExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockFatalParams
@@ -1572,13 +1572,13 @@ type LoggerMockFatalExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockFatalParams contains parameters of the ILog.Fatal
+// LoggerMockFatalParams contains parameters of the Logger.Fatal
 type LoggerMockFatalParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockFatalParamPtrs contains pointers to parameters of the ILog.Fatal
+// LoggerMockFatalParamPtrs contains pointers to parameters of the Logger.Fatal
 type LoggerMockFatalParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -1594,7 +1594,7 @@ func (mmFatal *mLoggerMockFatal) Optional() *mLoggerMockFatal {
 	return mmFatal
 }
 
-// Expect sets up expected params for ILog.Fatal
+// Expect sets up expected params for Logger.Fatal
 func (mmFatal *mLoggerMockFatal) Expect(ctx context.Context, m string) *mLoggerMockFatal {
 	if mmFatal.mock.funcFatal != nil {
 		mmFatal.mock.t.Fatalf("LoggerMock.Fatal mock is already set by Set")
@@ -1618,7 +1618,7 @@ func (mmFatal *mLoggerMockFatal) Expect(ctx context.Context, m string) *mLoggerM
 	return mmFatal
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Fatal
+// ExpectCtxParam1 sets up expected param ctx for Logger.Fatal
 func (mmFatal *mLoggerMockFatal) ExpectCtxParam1(ctx context.Context) *mLoggerMockFatal {
 	if mmFatal.mock.funcFatal != nil {
 		mmFatal.mock.t.Fatalf("LoggerMock.Fatal mock is already set by Set")
@@ -1640,7 +1640,7 @@ func (mmFatal *mLoggerMockFatal) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmFatal
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Fatal
+// ExpectMParam2 sets up expected param m for Logger.Fatal
 func (mmFatal *mLoggerMockFatal) ExpectMParam2(m string) *mLoggerMockFatal {
 	if mmFatal.mock.funcFatal != nil {
 		mmFatal.mock.t.Fatalf("LoggerMock.Fatal mock is already set by Set")
@@ -1662,7 +1662,7 @@ func (mmFatal *mLoggerMockFatal) ExpectMParam2(m string) *mLoggerMockFatal {
 	return mmFatal
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Fatal
+// Inspect accepts an inspector function that has same arguments as the Logger.Fatal
 func (mmFatal *mLoggerMockFatal) Inspect(f func(ctx context.Context, m string)) *mLoggerMockFatal {
 	if mmFatal.mock.inspectFuncFatal != nil {
 		mmFatal.mock.t.Fatalf("Inspect function is already set for LoggerMock.Fatal")
@@ -1673,7 +1673,7 @@ func (mmFatal *mLoggerMockFatal) Inspect(f func(ctx context.Context, m string)) 
 	return mmFatal
 }
 
-// Return sets up results that will be returned by ILog.Fatal
+// Return sets up results that will be returned by Logger.Fatal
 func (mmFatal *mLoggerMockFatal) Return() *LoggerMock {
 	if mmFatal.mock.funcFatal != nil {
 		mmFatal.mock.t.Fatalf("LoggerMock.Fatal mock is already set by Set")
@@ -1686,21 +1686,21 @@ func (mmFatal *mLoggerMockFatal) Return() *LoggerMock {
 	return mmFatal.mock
 }
 
-// Set uses given function f to mock the ILog.Fatal method
+// Set uses given function f to mock the Logger.Fatal method
 func (mmFatal *mLoggerMockFatal) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmFatal.defaultExpectation != nil {
-		mmFatal.mock.t.Fatalf("Default expectation is already set for the ILog.Fatal method")
+		mmFatal.mock.t.Fatalf("Default expectation is already set for the Logger.Fatal method")
 	}
 
 	if len(mmFatal.expectations) > 0 {
-		mmFatal.mock.t.Fatalf("Some expectations are already set for the ILog.Fatal method")
+		mmFatal.mock.t.Fatalf("Some expectations are already set for the Logger.Fatal method")
 	}
 
 	mmFatal.mock.funcFatal = f
 	return mmFatal.mock
 }
 
-// Times sets number of times ILog.Fatal should be invoked
+// Times sets number of times Logger.Fatal should be invoked
 func (mmFatal *mLoggerMockFatal) Times(n uint64) *mLoggerMockFatal {
 	if n == 0 {
 		mmFatal.mock.t.Fatalf("Times of LoggerMock.Fatal mock can not be zero")
@@ -1720,7 +1720,7 @@ func (mmFatal *mLoggerMockFatal) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Fatal implements logger.ILog
+// Fatal implements logger.Logger
 func (mmFatal *LoggerMock) Fatal(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmFatal.beforeFatalCounter, 1)
 	defer mm_atomic.AddUint64(&mmFatal.afterFatalCounter, 1)
@@ -1855,7 +1855,7 @@ type mLoggerMockFatalf struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockFatalfExpectation specifies expectation struct of the ILog.Fatalf
+// LoggerMockFatalfExpectation specifies expectation struct of the Logger.Fatalf
 type LoggerMockFatalfExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockFatalfParams
@@ -1864,14 +1864,14 @@ type LoggerMockFatalfExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockFatalfParams contains parameters of the ILog.Fatalf
+// LoggerMockFatalfParams contains parameters of the Logger.Fatalf
 type LoggerMockFatalfParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockFatalfParamPtrs contains pointers to parameters of the ILog.Fatalf
+// LoggerMockFatalfParamPtrs contains pointers to parameters of the Logger.Fatalf
 type LoggerMockFatalfParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -1888,7 +1888,7 @@ func (mmFatalf *mLoggerMockFatalf) Optional() *mLoggerMockFatalf {
 	return mmFatalf
 }
 
-// Expect sets up expected params for ILog.Fatalf
+// Expect sets up expected params for Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) Expect(ctx context.Context, m string, args ...any) *mLoggerMockFatalf {
 	if mmFatalf.mock.funcFatalf != nil {
 		mmFatalf.mock.t.Fatalf("LoggerMock.Fatalf mock is already set by Set")
@@ -1912,7 +1912,7 @@ func (mmFatalf *mLoggerMockFatalf) Expect(ctx context.Context, m string, args ..
 	return mmFatalf
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Fatalf
+// ExpectCtxParam1 sets up expected param ctx for Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) ExpectCtxParam1(ctx context.Context) *mLoggerMockFatalf {
 	if mmFatalf.mock.funcFatalf != nil {
 		mmFatalf.mock.t.Fatalf("LoggerMock.Fatalf mock is already set by Set")
@@ -1934,7 +1934,7 @@ func (mmFatalf *mLoggerMockFatalf) ExpectCtxParam1(ctx context.Context) *mLogger
 	return mmFatalf
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Fatalf
+// ExpectMParam2 sets up expected param m for Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) ExpectMParam2(m string) *mLoggerMockFatalf {
 	if mmFatalf.mock.funcFatalf != nil {
 		mmFatalf.mock.t.Fatalf("LoggerMock.Fatalf mock is already set by Set")
@@ -1956,7 +1956,7 @@ func (mmFatalf *mLoggerMockFatalf) ExpectMParam2(m string) *mLoggerMockFatalf {
 	return mmFatalf
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Fatalf
+// ExpectArgsParam3 sets up expected param args for Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) ExpectArgsParam3(args ...any) *mLoggerMockFatalf {
 	if mmFatalf.mock.funcFatalf != nil {
 		mmFatalf.mock.t.Fatalf("LoggerMock.Fatalf mock is already set by Set")
@@ -1978,7 +1978,7 @@ func (mmFatalf *mLoggerMockFatalf) ExpectArgsParam3(args ...any) *mLoggerMockFat
 	return mmFatalf
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Fatalf
+// Inspect accepts an inspector function that has same arguments as the Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockFatalf {
 	if mmFatalf.mock.inspectFuncFatalf != nil {
 		mmFatalf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Fatalf")
@@ -1989,7 +1989,7 @@ func (mmFatalf *mLoggerMockFatalf) Inspect(f func(ctx context.Context, m string,
 	return mmFatalf
 }
 
-// Return sets up results that will be returned by ILog.Fatalf
+// Return sets up results that will be returned by Logger.Fatalf
 func (mmFatalf *mLoggerMockFatalf) Return() *LoggerMock {
 	if mmFatalf.mock.funcFatalf != nil {
 		mmFatalf.mock.t.Fatalf("LoggerMock.Fatalf mock is already set by Set")
@@ -2002,21 +2002,21 @@ func (mmFatalf *mLoggerMockFatalf) Return() *LoggerMock {
 	return mmFatalf.mock
 }
 
-// Set uses given function f to mock the ILog.Fatalf method
+// Set uses given function f to mock the Logger.Fatalf method
 func (mmFatalf *mLoggerMockFatalf) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmFatalf.defaultExpectation != nil {
-		mmFatalf.mock.t.Fatalf("Default expectation is already set for the ILog.Fatalf method")
+		mmFatalf.mock.t.Fatalf("Default expectation is already set for the Logger.Fatalf method")
 	}
 
 	if len(mmFatalf.expectations) > 0 {
-		mmFatalf.mock.t.Fatalf("Some expectations are already set for the ILog.Fatalf method")
+		mmFatalf.mock.t.Fatalf("Some expectations are already set for the Logger.Fatalf method")
 	}
 
 	mmFatalf.mock.funcFatalf = f
 	return mmFatalf.mock
 }
 
-// Times sets number of times ILog.Fatalf should be invoked
+// Times sets number of times Logger.Fatalf should be invoked
 func (mmFatalf *mLoggerMockFatalf) Times(n uint64) *mLoggerMockFatalf {
 	if n == 0 {
 		mmFatalf.mock.t.Fatalf("Times of LoggerMock.Fatalf mock can not be zero")
@@ -2036,7 +2036,7 @@ func (mmFatalf *mLoggerMockFatalf) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Fatalf implements logger.ILog
+// Fatalf implements logger.Logger
 func (mmFatalf *LoggerMock) Fatalf(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmFatalf.beforeFatalfCounter, 1)
 	defer mm_atomic.AddUint64(&mmFatalf.afterFatalfCounter, 1)
@@ -2175,7 +2175,7 @@ type mLoggerMockInfo struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockInfoExpectation specifies expectation struct of the ILog.Info
+// LoggerMockInfoExpectation specifies expectation struct of the Logger.Info
 type LoggerMockInfoExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockInfoParams
@@ -2184,13 +2184,13 @@ type LoggerMockInfoExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockInfoParams contains parameters of the ILog.Info
+// LoggerMockInfoParams contains parameters of the Logger.Info
 type LoggerMockInfoParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockInfoParamPtrs contains pointers to parameters of the ILog.Info
+// LoggerMockInfoParamPtrs contains pointers to parameters of the Logger.Info
 type LoggerMockInfoParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -2206,7 +2206,7 @@ func (mmInfo *mLoggerMockInfo) Optional() *mLoggerMockInfo {
 	return mmInfo
 }
 
-// Expect sets up expected params for ILog.Info
+// Expect sets up expected params for Logger.Info
 func (mmInfo *mLoggerMockInfo) Expect(ctx context.Context, m string) *mLoggerMockInfo {
 	if mmInfo.mock.funcInfo != nil {
 		mmInfo.mock.t.Fatalf("LoggerMock.Info mock is already set by Set")
@@ -2230,7 +2230,7 @@ func (mmInfo *mLoggerMockInfo) Expect(ctx context.Context, m string) *mLoggerMoc
 	return mmInfo
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Info
+// ExpectCtxParam1 sets up expected param ctx for Logger.Info
 func (mmInfo *mLoggerMockInfo) ExpectCtxParam1(ctx context.Context) *mLoggerMockInfo {
 	if mmInfo.mock.funcInfo != nil {
 		mmInfo.mock.t.Fatalf("LoggerMock.Info mock is already set by Set")
@@ -2252,7 +2252,7 @@ func (mmInfo *mLoggerMockInfo) ExpectCtxParam1(ctx context.Context) *mLoggerMock
 	return mmInfo
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Info
+// ExpectMParam2 sets up expected param m for Logger.Info
 func (mmInfo *mLoggerMockInfo) ExpectMParam2(m string) *mLoggerMockInfo {
 	if mmInfo.mock.funcInfo != nil {
 		mmInfo.mock.t.Fatalf("LoggerMock.Info mock is already set by Set")
@@ -2274,7 +2274,7 @@ func (mmInfo *mLoggerMockInfo) ExpectMParam2(m string) *mLoggerMockInfo {
 	return mmInfo
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Info
+// Inspect accepts an inspector function that has same arguments as the Logger.Info
 func (mmInfo *mLoggerMockInfo) Inspect(f func(ctx context.Context, m string)) *mLoggerMockInfo {
 	if mmInfo.mock.inspectFuncInfo != nil {
 		mmInfo.mock.t.Fatalf("Inspect function is already set for LoggerMock.Info")
@@ -2285,7 +2285,7 @@ func (mmInfo *mLoggerMockInfo) Inspect(f func(ctx context.Context, m string)) *m
 	return mmInfo
 }
 
-// Return sets up results that will be returned by ILog.Info
+// Return sets up results that will be returned by Logger.Info
 func (mmInfo *mLoggerMockInfo) Return() *LoggerMock {
 	if mmInfo.mock.funcInfo != nil {
 		mmInfo.mock.t.Fatalf("LoggerMock.Info mock is already set by Set")
@@ -2298,21 +2298,21 @@ func (mmInfo *mLoggerMockInfo) Return() *LoggerMock {
 	return mmInfo.mock
 }
 
-// Set uses given function f to mock the ILog.Info method
+// Set uses given function f to mock the Logger.Info method
 func (mmInfo *mLoggerMockInfo) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmInfo.defaultExpectation != nil {
-		mmInfo.mock.t.Fatalf("Default expectation is already set for the ILog.Info method")
+		mmInfo.mock.t.Fatalf("Default expectation is already set for the Logger.Info method")
 	}
 
 	if len(mmInfo.expectations) > 0 {
-		mmInfo.mock.t.Fatalf("Some expectations are already set for the ILog.Info method")
+		mmInfo.mock.t.Fatalf("Some expectations are already set for the Logger.Info method")
 	}
 
 	mmInfo.mock.funcInfo = f
 	return mmInfo.mock
 }
 
-// Times sets number of times ILog.Info should be invoked
+// Times sets number of times Logger.Info should be invoked
 func (mmInfo *mLoggerMockInfo) Times(n uint64) *mLoggerMockInfo {
 	if n == 0 {
 		mmInfo.mock.t.Fatalf("Times of LoggerMock.Info mock can not be zero")
@@ -2332,7 +2332,7 @@ func (mmInfo *mLoggerMockInfo) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Info implements logger.ILog
+// Info implements logger.Logger
 func (mmInfo *LoggerMock) Info(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmInfo.beforeInfoCounter, 1)
 	defer mm_atomic.AddUint64(&mmInfo.afterInfoCounter, 1)
@@ -2467,7 +2467,7 @@ type mLoggerMockInfof struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockInfofExpectation specifies expectation struct of the ILog.Infof
+// LoggerMockInfofExpectation specifies expectation struct of the Logger.Infof
 type LoggerMockInfofExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockInfofParams
@@ -2476,14 +2476,14 @@ type LoggerMockInfofExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockInfofParams contains parameters of the ILog.Infof
+// LoggerMockInfofParams contains parameters of the Logger.Infof
 type LoggerMockInfofParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockInfofParamPtrs contains pointers to parameters of the ILog.Infof
+// LoggerMockInfofParamPtrs contains pointers to parameters of the Logger.Infof
 type LoggerMockInfofParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -2500,7 +2500,7 @@ func (mmInfof *mLoggerMockInfof) Optional() *mLoggerMockInfof {
 	return mmInfof
 }
 
-// Expect sets up expected params for ILog.Infof
+// Expect sets up expected params for Logger.Infof
 func (mmInfof *mLoggerMockInfof) Expect(ctx context.Context, m string, args ...any) *mLoggerMockInfof {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
@@ -2524,7 +2524,7 @@ func (mmInfof *mLoggerMockInfof) Expect(ctx context.Context, m string, args ...a
 	return mmInfof
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Infof
+// ExpectCtxParam1 sets up expected param ctx for Logger.Infof
 func (mmInfof *mLoggerMockInfof) ExpectCtxParam1(ctx context.Context) *mLoggerMockInfof {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
@@ -2546,7 +2546,7 @@ func (mmInfof *mLoggerMockInfof) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmInfof
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Infof
+// ExpectMParam2 sets up expected param m for Logger.Infof
 func (mmInfof *mLoggerMockInfof) ExpectMParam2(m string) *mLoggerMockInfof {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
@@ -2568,7 +2568,7 @@ func (mmInfof *mLoggerMockInfof) ExpectMParam2(m string) *mLoggerMockInfof {
 	return mmInfof
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Infof
+// ExpectArgsParam3 sets up expected param args for Logger.Infof
 func (mmInfof *mLoggerMockInfof) ExpectArgsParam3(args ...any) *mLoggerMockInfof {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
@@ -2590,7 +2590,7 @@ func (mmInfof *mLoggerMockInfof) ExpectArgsParam3(args ...any) *mLoggerMockInfof
 	return mmInfof
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Infof
+// Inspect accepts an inspector function that has same arguments as the Logger.Infof
 func (mmInfof *mLoggerMockInfof) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockInfof {
 	if mmInfof.mock.inspectFuncInfof != nil {
 		mmInfof.mock.t.Fatalf("Inspect function is already set for LoggerMock.Infof")
@@ -2601,7 +2601,7 @@ func (mmInfof *mLoggerMockInfof) Inspect(f func(ctx context.Context, m string, a
 	return mmInfof
 }
 
-// Return sets up results that will be returned by ILog.Infof
+// Return sets up results that will be returned by Logger.Infof
 func (mmInfof *mLoggerMockInfof) Return() *LoggerMock {
 	if mmInfof.mock.funcInfof != nil {
 		mmInfof.mock.t.Fatalf("LoggerMock.Infof mock is already set by Set")
@@ -2614,21 +2614,21 @@ func (mmInfof *mLoggerMockInfof) Return() *LoggerMock {
 	return mmInfof.mock
 }
 
-// Set uses given function f to mock the ILog.Infof method
+// Set uses given function f to mock the Logger.Infof method
 func (mmInfof *mLoggerMockInfof) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmInfof.defaultExpectation != nil {
-		mmInfof.mock.t.Fatalf("Default expectation is already set for the ILog.Infof method")
+		mmInfof.mock.t.Fatalf("Default expectation is already set for the Logger.Infof method")
 	}
 
 	if len(mmInfof.expectations) > 0 {
-		mmInfof.mock.t.Fatalf("Some expectations are already set for the ILog.Infof method")
+		mmInfof.mock.t.Fatalf("Some expectations are already set for the Logger.Infof method")
 	}
 
 	mmInfof.mock.funcInfof = f
 	return mmInfof.mock
 }
 
-// Times sets number of times ILog.Infof should be invoked
+// Times sets number of times Logger.Infof should be invoked
 func (mmInfof *mLoggerMockInfof) Times(n uint64) *mLoggerMockInfof {
 	if n == 0 {
 		mmInfof.mock.t.Fatalf("Times of LoggerMock.Infof mock can not be zero")
@@ -2648,7 +2648,7 @@ func (mmInfof *mLoggerMockInfof) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Infof implements logger.ILog
+// Infof implements logger.Logger
 func (mmInfof *LoggerMock) Infof(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmInfof.beforeInfofCounter, 1)
 	defer mm_atomic.AddUint64(&mmInfof.afterInfofCounter, 1)
@@ -2787,7 +2787,7 @@ type mLoggerMockPanic struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockPanicExpectation specifies expectation struct of the ILog.Panic
+// LoggerMockPanicExpectation specifies expectation struct of the Logger.Panic
 type LoggerMockPanicExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockPanicParams
@@ -2796,13 +2796,13 @@ type LoggerMockPanicExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockPanicParams contains parameters of the ILog.Panic
+// LoggerMockPanicParams contains parameters of the Logger.Panic
 type LoggerMockPanicParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockPanicParamPtrs contains pointers to parameters of the ILog.Panic
+// LoggerMockPanicParamPtrs contains pointers to parameters of the Logger.Panic
 type LoggerMockPanicParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -2818,7 +2818,7 @@ func (mmPanic *mLoggerMockPanic) Optional() *mLoggerMockPanic {
 	return mmPanic
 }
 
-// Expect sets up expected params for ILog.Panic
+// Expect sets up expected params for Logger.Panic
 func (mmPanic *mLoggerMockPanic) Expect(ctx context.Context, m string) *mLoggerMockPanic {
 	if mmPanic.mock.funcPanic != nil {
 		mmPanic.mock.t.Fatalf("LoggerMock.Panic mock is already set by Set")
@@ -2842,7 +2842,7 @@ func (mmPanic *mLoggerMockPanic) Expect(ctx context.Context, m string) *mLoggerM
 	return mmPanic
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Panic
+// ExpectCtxParam1 sets up expected param ctx for Logger.Panic
 func (mmPanic *mLoggerMockPanic) ExpectCtxParam1(ctx context.Context) *mLoggerMockPanic {
 	if mmPanic.mock.funcPanic != nil {
 		mmPanic.mock.t.Fatalf("LoggerMock.Panic mock is already set by Set")
@@ -2864,7 +2864,7 @@ func (mmPanic *mLoggerMockPanic) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmPanic
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Panic
+// ExpectMParam2 sets up expected param m for Logger.Panic
 func (mmPanic *mLoggerMockPanic) ExpectMParam2(m string) *mLoggerMockPanic {
 	if mmPanic.mock.funcPanic != nil {
 		mmPanic.mock.t.Fatalf("LoggerMock.Panic mock is already set by Set")
@@ -2886,7 +2886,7 @@ func (mmPanic *mLoggerMockPanic) ExpectMParam2(m string) *mLoggerMockPanic {
 	return mmPanic
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Panic
+// Inspect accepts an inspector function that has same arguments as the Logger.Panic
 func (mmPanic *mLoggerMockPanic) Inspect(f func(ctx context.Context, m string)) *mLoggerMockPanic {
 	if mmPanic.mock.inspectFuncPanic != nil {
 		mmPanic.mock.t.Fatalf("Inspect function is already set for LoggerMock.Panic")
@@ -2897,7 +2897,7 @@ func (mmPanic *mLoggerMockPanic) Inspect(f func(ctx context.Context, m string)) 
 	return mmPanic
 }
 
-// Return sets up results that will be returned by ILog.Panic
+// Return sets up results that will be returned by Logger.Panic
 func (mmPanic *mLoggerMockPanic) Return() *LoggerMock {
 	if mmPanic.mock.funcPanic != nil {
 		mmPanic.mock.t.Fatalf("LoggerMock.Panic mock is already set by Set")
@@ -2910,21 +2910,21 @@ func (mmPanic *mLoggerMockPanic) Return() *LoggerMock {
 	return mmPanic.mock
 }
 
-// Set uses given function f to mock the ILog.Panic method
+// Set uses given function f to mock the Logger.Panic method
 func (mmPanic *mLoggerMockPanic) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmPanic.defaultExpectation != nil {
-		mmPanic.mock.t.Fatalf("Default expectation is already set for the ILog.Panic method")
+		mmPanic.mock.t.Fatalf("Default expectation is already set for the Logger.Panic method")
 	}
 
 	if len(mmPanic.expectations) > 0 {
-		mmPanic.mock.t.Fatalf("Some expectations are already set for the ILog.Panic method")
+		mmPanic.mock.t.Fatalf("Some expectations are already set for the Logger.Panic method")
 	}
 
 	mmPanic.mock.funcPanic = f
 	return mmPanic.mock
 }
 
-// Times sets number of times ILog.Panic should be invoked
+// Times sets number of times Logger.Panic should be invoked
 func (mmPanic *mLoggerMockPanic) Times(n uint64) *mLoggerMockPanic {
 	if n == 0 {
 		mmPanic.mock.t.Fatalf("Times of LoggerMock.Panic mock can not be zero")
@@ -2944,7 +2944,7 @@ func (mmPanic *mLoggerMockPanic) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Panic implements logger.ILog
+// Panic implements logger.Logger
 func (mmPanic *LoggerMock) Panic(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmPanic.beforePanicCounter, 1)
 	defer mm_atomic.AddUint64(&mmPanic.afterPanicCounter, 1)
@@ -3079,7 +3079,7 @@ type mLoggerMockPanicf struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockPanicfExpectation specifies expectation struct of the ILog.Panicf
+// LoggerMockPanicfExpectation specifies expectation struct of the Logger.Panicf
 type LoggerMockPanicfExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockPanicfParams
@@ -3088,14 +3088,14 @@ type LoggerMockPanicfExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockPanicfParams contains parameters of the ILog.Panicf
+// LoggerMockPanicfParams contains parameters of the Logger.Panicf
 type LoggerMockPanicfParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockPanicfParamPtrs contains pointers to parameters of the ILog.Panicf
+// LoggerMockPanicfParamPtrs contains pointers to parameters of the Logger.Panicf
 type LoggerMockPanicfParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -3112,7 +3112,7 @@ func (mmPanicf *mLoggerMockPanicf) Optional() *mLoggerMockPanicf {
 	return mmPanicf
 }
 
-// Expect sets up expected params for ILog.Panicf
+// Expect sets up expected params for Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) Expect(ctx context.Context, m string, args ...any) *mLoggerMockPanicf {
 	if mmPanicf.mock.funcPanicf != nil {
 		mmPanicf.mock.t.Fatalf("LoggerMock.Panicf mock is already set by Set")
@@ -3136,7 +3136,7 @@ func (mmPanicf *mLoggerMockPanicf) Expect(ctx context.Context, m string, args ..
 	return mmPanicf
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Panicf
+// ExpectCtxParam1 sets up expected param ctx for Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) ExpectCtxParam1(ctx context.Context) *mLoggerMockPanicf {
 	if mmPanicf.mock.funcPanicf != nil {
 		mmPanicf.mock.t.Fatalf("LoggerMock.Panicf mock is already set by Set")
@@ -3158,7 +3158,7 @@ func (mmPanicf *mLoggerMockPanicf) ExpectCtxParam1(ctx context.Context) *mLogger
 	return mmPanicf
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Panicf
+// ExpectMParam2 sets up expected param m for Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) ExpectMParam2(m string) *mLoggerMockPanicf {
 	if mmPanicf.mock.funcPanicf != nil {
 		mmPanicf.mock.t.Fatalf("LoggerMock.Panicf mock is already set by Set")
@@ -3180,7 +3180,7 @@ func (mmPanicf *mLoggerMockPanicf) ExpectMParam2(m string) *mLoggerMockPanicf {
 	return mmPanicf
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Panicf
+// ExpectArgsParam3 sets up expected param args for Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) ExpectArgsParam3(args ...any) *mLoggerMockPanicf {
 	if mmPanicf.mock.funcPanicf != nil {
 		mmPanicf.mock.t.Fatalf("LoggerMock.Panicf mock is already set by Set")
@@ -3202,7 +3202,7 @@ func (mmPanicf *mLoggerMockPanicf) ExpectArgsParam3(args ...any) *mLoggerMockPan
 	return mmPanicf
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Panicf
+// Inspect accepts an inspector function that has same arguments as the Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockPanicf {
 	if mmPanicf.mock.inspectFuncPanicf != nil {
 		mmPanicf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Panicf")
@@ -3213,7 +3213,7 @@ func (mmPanicf *mLoggerMockPanicf) Inspect(f func(ctx context.Context, m string,
 	return mmPanicf
 }
 
-// Return sets up results that will be returned by ILog.Panicf
+// Return sets up results that will be returned by Logger.Panicf
 func (mmPanicf *mLoggerMockPanicf) Return() *LoggerMock {
 	if mmPanicf.mock.funcPanicf != nil {
 		mmPanicf.mock.t.Fatalf("LoggerMock.Panicf mock is already set by Set")
@@ -3226,21 +3226,21 @@ func (mmPanicf *mLoggerMockPanicf) Return() *LoggerMock {
 	return mmPanicf.mock
 }
 
-// Set uses given function f to mock the ILog.Panicf method
+// Set uses given function f to mock the Logger.Panicf method
 func (mmPanicf *mLoggerMockPanicf) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmPanicf.defaultExpectation != nil {
-		mmPanicf.mock.t.Fatalf("Default expectation is already set for the ILog.Panicf method")
+		mmPanicf.mock.t.Fatalf("Default expectation is already set for the Logger.Panicf method")
 	}
 
 	if len(mmPanicf.expectations) > 0 {
-		mmPanicf.mock.t.Fatalf("Some expectations are already set for the ILog.Panicf method")
+		mmPanicf.mock.t.Fatalf("Some expectations are already set for the Logger.Panicf method")
 	}
 
 	mmPanicf.mock.funcPanicf = f
 	return mmPanicf.mock
 }
 
-// Times sets number of times ILog.Panicf should be invoked
+// Times sets number of times Logger.Panicf should be invoked
 func (mmPanicf *mLoggerMockPanicf) Times(n uint64) *mLoggerMockPanicf {
 	if n == 0 {
 		mmPanicf.mock.t.Fatalf("Times of LoggerMock.Panicf mock can not be zero")
@@ -3260,7 +3260,7 @@ func (mmPanicf *mLoggerMockPanicf) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Panicf implements logger.ILog
+// Panicf implements logger.Logger
 func (mmPanicf *LoggerMock) Panicf(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmPanicf.beforePanicfCounter, 1)
 	defer mm_atomic.AddUint64(&mmPanicf.afterPanicfCounter, 1)
@@ -3399,7 +3399,7 @@ type mLoggerMockWarn struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockWarnExpectation specifies expectation struct of the ILog.Warn
+// LoggerMockWarnExpectation specifies expectation struct of the Logger.Warn
 type LoggerMockWarnExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockWarnParams
@@ -3408,13 +3408,13 @@ type LoggerMockWarnExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockWarnParams contains parameters of the ILog.Warn
+// LoggerMockWarnParams contains parameters of the Logger.Warn
 type LoggerMockWarnParams struct {
 	ctx context.Context
 	m   string
 }
 
-// LoggerMockWarnParamPtrs contains pointers to parameters of the ILog.Warn
+// LoggerMockWarnParamPtrs contains pointers to parameters of the Logger.Warn
 type LoggerMockWarnParamPtrs struct {
 	ctx *context.Context
 	m   *string
@@ -3430,7 +3430,7 @@ func (mmWarn *mLoggerMockWarn) Optional() *mLoggerMockWarn {
 	return mmWarn
 }
 
-// Expect sets up expected params for ILog.Warn
+// Expect sets up expected params for Logger.Warn
 func (mmWarn *mLoggerMockWarn) Expect(ctx context.Context, m string) *mLoggerMockWarn {
 	if mmWarn.mock.funcWarn != nil {
 		mmWarn.mock.t.Fatalf("LoggerMock.Warn mock is already set by Set")
@@ -3454,7 +3454,7 @@ func (mmWarn *mLoggerMockWarn) Expect(ctx context.Context, m string) *mLoggerMoc
 	return mmWarn
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Warn
+// ExpectCtxParam1 sets up expected param ctx for Logger.Warn
 func (mmWarn *mLoggerMockWarn) ExpectCtxParam1(ctx context.Context) *mLoggerMockWarn {
 	if mmWarn.mock.funcWarn != nil {
 		mmWarn.mock.t.Fatalf("LoggerMock.Warn mock is already set by Set")
@@ -3476,7 +3476,7 @@ func (mmWarn *mLoggerMockWarn) ExpectCtxParam1(ctx context.Context) *mLoggerMock
 	return mmWarn
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Warn
+// ExpectMParam2 sets up expected param m for Logger.Warn
 func (mmWarn *mLoggerMockWarn) ExpectMParam2(m string) *mLoggerMockWarn {
 	if mmWarn.mock.funcWarn != nil {
 		mmWarn.mock.t.Fatalf("LoggerMock.Warn mock is already set by Set")
@@ -3498,7 +3498,7 @@ func (mmWarn *mLoggerMockWarn) ExpectMParam2(m string) *mLoggerMockWarn {
 	return mmWarn
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Warn
+// Inspect accepts an inspector function that has same arguments as the Logger.Warn
 func (mmWarn *mLoggerMockWarn) Inspect(f func(ctx context.Context, m string)) *mLoggerMockWarn {
 	if mmWarn.mock.inspectFuncWarn != nil {
 		mmWarn.mock.t.Fatalf("Inspect function is already set for LoggerMock.Warn")
@@ -3509,7 +3509,7 @@ func (mmWarn *mLoggerMockWarn) Inspect(f func(ctx context.Context, m string)) *m
 	return mmWarn
 }
 
-// Return sets up results that will be returned by ILog.Warn
+// Return sets up results that will be returned by Logger.Warn
 func (mmWarn *mLoggerMockWarn) Return() *LoggerMock {
 	if mmWarn.mock.funcWarn != nil {
 		mmWarn.mock.t.Fatalf("LoggerMock.Warn mock is already set by Set")
@@ -3522,21 +3522,21 @@ func (mmWarn *mLoggerMockWarn) Return() *LoggerMock {
 	return mmWarn.mock
 }
 
-// Set uses given function f to mock the ILog.Warn method
+// Set uses given function f to mock the Logger.Warn method
 func (mmWarn *mLoggerMockWarn) Set(f func(ctx context.Context, m string)) *LoggerMock {
 	if mmWarn.defaultExpectation != nil {
-		mmWarn.mock.t.Fatalf("Default expectation is already set for the ILog.Warn method")
+		mmWarn.mock.t.Fatalf("Default expectation is already set for the Logger.Warn method")
 	}
 
 	if len(mmWarn.expectations) > 0 {
-		mmWarn.mock.t.Fatalf("Some expectations are already set for the ILog.Warn method")
+		mmWarn.mock.t.Fatalf("Some expectations are already set for the Logger.Warn method")
 	}
 
 	mmWarn.mock.funcWarn = f
 	return mmWarn.mock
 }
 
-// Times sets number of times ILog.Warn should be invoked
+// Times sets number of times Logger.Warn should be invoked
 func (mmWarn *mLoggerMockWarn) Times(n uint64) *mLoggerMockWarn {
 	if n == 0 {
 		mmWarn.mock.t.Fatalf("Times of LoggerMock.Warn mock can not be zero")
@@ -3556,7 +3556,7 @@ func (mmWarn *mLoggerMockWarn) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Warn implements logger.ILog
+// Warn implements logger.Logger
 func (mmWarn *LoggerMock) Warn(ctx context.Context, m string) {
 	mm_atomic.AddUint64(&mmWarn.beforeWarnCounter, 1)
 	defer mm_atomic.AddUint64(&mmWarn.afterWarnCounter, 1)
@@ -3691,7 +3691,7 @@ type mLoggerMockWarnf struct {
 	expectedInvocations uint64
 }
 
-// LoggerMockWarnfExpectation specifies expectation struct of the ILog.Warnf
+// LoggerMockWarnfExpectation specifies expectation struct of the Logger.Warnf
 type LoggerMockWarnfExpectation struct {
 	mock      *LoggerMock
 	params    *LoggerMockWarnfParams
@@ -3700,14 +3700,14 @@ type LoggerMockWarnfExpectation struct {
 	Counter uint64
 }
 
-// LoggerMockWarnfParams contains parameters of the ILog.Warnf
+// LoggerMockWarnfParams contains parameters of the Logger.Warnf
 type LoggerMockWarnfParams struct {
 	ctx  context.Context
 	m    string
 	args []any
 }
 
-// LoggerMockWarnfParamPtrs contains pointers to parameters of the ILog.Warnf
+// LoggerMockWarnfParamPtrs contains pointers to parameters of the Logger.Warnf
 type LoggerMockWarnfParamPtrs struct {
 	ctx  *context.Context
 	m    *string
@@ -3724,7 +3724,7 @@ func (mmWarnf *mLoggerMockWarnf) Optional() *mLoggerMockWarnf {
 	return mmWarnf
 }
 
-// Expect sets up expected params for ILog.Warnf
+// Expect sets up expected params for Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) Expect(ctx context.Context, m string, args ...any) *mLoggerMockWarnf {
 	if mmWarnf.mock.funcWarnf != nil {
 		mmWarnf.mock.t.Fatalf("LoggerMock.Warnf mock is already set by Set")
@@ -3748,7 +3748,7 @@ func (mmWarnf *mLoggerMockWarnf) Expect(ctx context.Context, m string, args ...a
 	return mmWarnf
 }
 
-// ExpectCtxParam1 sets up expected param ctx for ILog.Warnf
+// ExpectCtxParam1 sets up expected param ctx for Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) ExpectCtxParam1(ctx context.Context) *mLoggerMockWarnf {
 	if mmWarnf.mock.funcWarnf != nil {
 		mmWarnf.mock.t.Fatalf("LoggerMock.Warnf mock is already set by Set")
@@ -3770,7 +3770,7 @@ func (mmWarnf *mLoggerMockWarnf) ExpectCtxParam1(ctx context.Context) *mLoggerMo
 	return mmWarnf
 }
 
-// ExpectMParam2 sets up expected param m for ILog.Warnf
+// ExpectMParam2 sets up expected param m for Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) ExpectMParam2(m string) *mLoggerMockWarnf {
 	if mmWarnf.mock.funcWarnf != nil {
 		mmWarnf.mock.t.Fatalf("LoggerMock.Warnf mock is already set by Set")
@@ -3792,7 +3792,7 @@ func (mmWarnf *mLoggerMockWarnf) ExpectMParam2(m string) *mLoggerMockWarnf {
 	return mmWarnf
 }
 
-// ExpectArgsParam3 sets up expected param args for ILog.Warnf
+// ExpectArgsParam3 sets up expected param args for Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) ExpectArgsParam3(args ...any) *mLoggerMockWarnf {
 	if mmWarnf.mock.funcWarnf != nil {
 		mmWarnf.mock.t.Fatalf("LoggerMock.Warnf mock is already set by Set")
@@ -3814,7 +3814,7 @@ func (mmWarnf *mLoggerMockWarnf) ExpectArgsParam3(args ...any) *mLoggerMockWarnf
 	return mmWarnf
 }
 
-// Inspect accepts an inspector function that has same arguments as the ILog.Warnf
+// Inspect accepts an inspector function that has same arguments as the Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) Inspect(f func(ctx context.Context, m string, args ...any)) *mLoggerMockWarnf {
 	if mmWarnf.mock.inspectFuncWarnf != nil {
 		mmWarnf.mock.t.Fatalf("Inspect function is already set for LoggerMock.Warnf")
@@ -3825,7 +3825,7 @@ func (mmWarnf *mLoggerMockWarnf) Inspect(f func(ctx context.Context, m string, a
 	return mmWarnf
 }
 
-// Return sets up results that will be returned by ILog.Warnf
+// Return sets up results that will be returned by Logger.Warnf
 func (mmWarnf *mLoggerMockWarnf) Return() *LoggerMock {
 	if mmWarnf.mock.funcWarnf != nil {
 		mmWarnf.mock.t.Fatalf("LoggerMock.Warnf mock is already set by Set")
@@ -3838,21 +3838,21 @@ func (mmWarnf *mLoggerMockWarnf) Return() *LoggerMock {
 	return mmWarnf.mock
 }
 
-// Set uses given function f to mock the ILog.Warnf method
+// Set uses given function f to mock the Logger.Warnf method
 func (mmWarnf *mLoggerMockWarnf) Set(f func(ctx context.Context, m string, args ...any)) *LoggerMock {
 	if mmWarnf.defaultExpectation != nil {
-		mmWarnf.mock.t.Fatalf("Default expectation is already set for the ILog.Warnf method")
+		mmWarnf.mock.t.Fatalf("Default expectation is already set for the Logger.Warnf method")
 	}
 
 	if len(mmWarnf.expectations) > 0 {
-		mmWarnf.mock.t.Fatalf("Some expectations are already set for the ILog.Warnf method")
+		mmWarnf.mock.t.Fatalf("Some expectations are already set for the Logger.Warnf method")
 	}
 
 	mmWarnf.mock.funcWarnf = f
 	return mmWarnf.mock
 }
 
-// Times sets number of times ILog.Warnf should be invoked
+// Times sets number of times Logger.Warnf should be invoked
 func (mmWarnf *mLoggerMockWarnf) Times(n uint64) *mLoggerMockWarnf {
 	if n == 0 {
 		mmWarnf.mock.t.Fatalf("Times of LoggerMock.Warnf mock can not be zero")
@@ -3872,7 +3872,7 @@ func (mmWarnf *mLoggerMockWarnf) invocationsDone() bool {
 	return totalInvocations > 0 && (expectedInvocations == 0 || expectedInvocations == totalInvocations)
 }
 
-// Warnf implements logger.ILog
+// Warnf implements logger.Logger
 func (mmWarnf *LoggerMock) Warnf(ctx context.Context, m string, args ...any) {
 	mm_atomic.AddUint64(&mmWarnf.beforeWarnfCounter, 1)
 	defer mm_atomic.AddUint64(&mmWarnf.afterWarnfCounter, 1)

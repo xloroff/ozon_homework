@@ -19,7 +19,7 @@ func TestInfoTable(t *testing.T) {
 
 	type fields struct {
 		stockStorageMock *mock.StockStorageMock
-		loggerMock       logger.ILog
+		loggerMock       logger.Logger
 	}
 
 	type data struct {
@@ -56,10 +56,10 @@ func TestInfoTable(t *testing.T) {
 			t.Parallel()
 
 			fieldsForTableTest.stockStorageMock.GetAvailableForReserveMock.
-				When(tt.skuID).
+				When(minimock.AnyContext, tt.skuID).
 				Then(tt.count, tt.wantErr)
 
-			count, err := servS.Info(tt.skuID)
+			count, err := servS.Info(ctx, tt.skuID)
 			require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)
 			require.Equal(t, count, tt.count, "Число остатков должно соответствовать.")
 		})

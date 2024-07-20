@@ -21,7 +21,7 @@ func TestInfoTable(t *testing.T) {
 	type fields struct {
 		stockStorageMock *mock.StockStorageMock
 		orderStorageMock *mock.OrderStorageMock
-		loggerMock       logger.ILog
+		loggerMock       logger.Logger
 	}
 
 	type data struct {
@@ -72,9 +72,9 @@ func TestInfoTable(t *testing.T) {
 			t.Parallel()
 
 			fieldsForTableTest.orderStorageMock.GetOrderMock.
-				When(tt.orderID).Then(tt.orderStore, tt.getOrderErr)
+				When(minimock.AnyContext, tt.orderID).Then(tt.orderStore, tt.getOrderErr)
 
-			ord, err := servO.Info(tt.orderID)
+			ord, err := servO.Info(ctx, tt.orderID)
 			if tt.wantErr != nil {
 				require.NotNil(t, err, "Должна быть ошибка")
 				require.ErrorIs(t, err, tt.wantErr, "Должна быть ошибка", tt.wantErr)

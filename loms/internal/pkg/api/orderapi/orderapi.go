@@ -14,14 +14,14 @@ import (
 
 // API структура апи заказов.
 type API struct {
-	logger logger.ILog
+	logger logger.Logger
 	ctx    context.Context
 	order.UnimplementedOrderAPIServer
 	orderService orderservice.Service
 }
 
 // NewAPI создает новое API заказов.
-func NewAPI(ctx context.Context, l logger.ILog, orderService orderservice.Service) *API {
+func NewAPI(ctx context.Context, l logger.Logger, orderService orderservice.Service) *API {
 	return &API{
 		logger:       l,
 		ctx:          ctx,

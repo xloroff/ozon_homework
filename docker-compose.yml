@@ -1,9 +1,5 @@
 # Общие параметры для синхронизации нод БД
 x-sync-node1-params: &sync-node1-params
-   build:
-     context: .
-     target: ${STAGE}
-     dockerfile: Dockerfile-BD
    healthcheck:
        test: ["CMD-SHELL", "pg_isready -U postgres"]
        interval: 1s
@@ -37,6 +33,8 @@ services:
       dockerfile: cart/Dockerfile
     environment:
       - APP_CONFIG_NAME
+      - JAEGER_HOST
+      - JAEGER_PORT
     depends_on:
       loms:
         condition: service_healthy
@@ -56,7 +54,7 @@ services:
     networks:
       - loms
 
-  # Cервис для работы с учетом заказов Loms
+# Cервис для работы с учетом заказов Loms
   loms:
     container_name: apploms-${STAGE}
     image: apploms-${STAGE}
@@ -71,6 +69,8 @@ services:
     environment:
       - APP_CONFIG_NAME
       - MIGRATION_FOLDER
+      - JAEGER_HOST
+      - JAEGER_PORT
       - DB_NODE_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_NODE_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
       - DB_SYNC_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_SYNC_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
     healthcheck:
@@ -95,10 +95,11 @@ services:
     networks:
       - loms
       - bd
+      - events
 
   bd-master-1:
     container_name: ${DB_NODE_1}-${STAGE}
-    image: ${DB_NODE_1}-${STAGE}
+    image: bitnami/postgresql:latest
     ports:
       - ${DB_NODE_1_PORT}:${BD_TOPORT}
     <<: *sync-node1-params
@@ -112,7 +113,7 @@ services:
 
   bd-sync-1:
     container_name: ${DB_SYNC_1}-${STAGE}
-    image: ${DB_SYNC_1}-${STAGE}
+    image: bitnami/postgresql:latest
     ports:
       - ${DB_SYNC_1_PORT}:${BD_TOPORT}
     <<: *sync-node1-params
@@ -125,7 +126,7 @@ services:
       bd-master-1:
         condition: service_healthy
 
-  # Cервис для запуска e2e тестов
+# Cервис для запуска e2e тестов
   e2e:
     container_name: appe2e-${STAGE}
     image: appe2e-${STAGE}
@@ -146,11 +147,172 @@ services:
     networks:
       - loms
 
+# Cнятие метрик
+  prometheus:
+    container_name: appprometheus-${STAGE}
+    image: appprometheus-${STAGE}
+    ports:
+      - ${PROMETAPP_FROMPORT}:${PROMETAPP_TOPORT}
+    volumes:
+      - ./prometheus/prometheus.template.yml:/etc/prometheus/prometheus.template.yml
+      - prometheus_data:/prometheus
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        envsubst < /etc/prometheus/prometheus.template.yml > /etc/prometheus/prometheus.yml
+        /bin/prometheus --config.file=/etc/prometheus/prometheus.yml \
+        --storage.tsdb.path=/prometheus \
+        --web.console.libraries=/usr/share/prometheus/console_libraries \
+        --web.console.templates=/usr/share/prometheus/consoles
+    build:
+      context: .
+      target: ${STAGE}
+      dockerfile: prometheus/Dockerfile
+    profiles:
+      - donotstart
+    environment:
+      - LOMSHTTP_TOPORT
+      - LOMS_APP_NAME
+      - PROMETAPP_TOPORT
+      - CART_APP_NAME
+      - CARTAPP_TOPORT
+    depends_on:
+      cart:
+        condition: service_started
+      loms:
+        condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl --fail http://prometheus:${PROMETAPP_TOPORT}/-/healthy || exit 1",
+        ]
+      interval: 3s
+      timeout: 5s
+      retries: 300
+      start_period: 10m
+    networks:
+      - loms
+      - metrics
+
+# Визуализация метрик
+  grafana:
+    container_name: appgrafana-${STAGE}
+    image: grafana/grafana:latest
+    platform: linux/amd64
+    profiles:
+      - donotstart
+    ports:
+      - ${GRAFANAAPP_FROMPORT}:${GRAFANAAPP_TOPORT}
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - grafana-data:/var/lib/grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    networks:
+      - metrics
+
+  jaeger:
+    container_name: appjaeger-${STAGE}
+    image: jaegertracing/all-in-one:1.58.1
+    platform: linux/amd64
+    profiles:
+      - donotstart
+    ports:
+      - ${JAEGERAPP_FROMPORT}:${JAEGERAPP_TOPORT}
+      - 4318:4318
+    healthcheck:
+      test: [
+        "CMD-SHELL",
+        "wget --no-verbose --tries=1 --spider http://localhost:14269 || exit 1",
+      ]
+      interval: 3s
+      timeout: 5s
+      retries: 300
+      start_period: 10m
+    networks:
+      - loms
+
+# Конфигурация Kafka
+  kafka:
+    container_name: kafka-${STAGE}
+    image: &kafka-image bitnami/kafka:latest
+    platform: linux/amd64
+    ports:
+      - ${KAFKA_FROMPORT}:${KAFKA_TOPORT}
+    environment:
+      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_KRAFT_CLUSTER_ID=PVjHlx7ESeesq55jeB6Efw
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,PLAINTEXT_HOST://:${KAFKA_TOPORT}
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOST}:29092,PLAINTEXT_HOST://${KAFKA_HOST}:${KAFKA_TOPORT}:${KAFKA_TOPORT}
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
+      - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
+      - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
+      - KAFKA_ADVERTISED_HOST_NAME=${KAFKA_HOST}
+    healthcheck:
+      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server=localhost:${KAFKA_TOPORT}", "--list" ]
+      interval: 3s
+      timeout: 5s
+      retries: 300
+      start_period: 10m
+    volumes:
+      - kafka-data:/bitnami/kafka
+    networks:
+      - events
+
+  init-kafka:
+    image: *kafka-image
+    platform: linux/amd64
+    working_dir: /opt/bitnami/kafka/bin
+    entrypoint: /bin/bash
+    depends_on:
+      kafka:
+        condition: service_healthy
+    command: |
+      kafka-topics.sh --create --if-not-exists --topic loms.order-events --replication-factor=1 --partitions=2 --bootstrap-server ${KAFKA_HOST}:${KAFKA_TOPORT}
+    networks:
+      - events
+
+  kafka-ui:
+    container_name: kafka-ui-${STAGE}
+    image: provectuslabs/kafka-ui:latest
+    platform: linux/amd64
+    profiles:
+      - donotstart
+    ports:
+      - ${KAFKAUI_FROMPORT}:${KAFKAUI_TOPORT}
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: ozon_hw
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_HOST}:${KAFKA_TOPORT}
+      DYNAMIC_CONFIG_ENABLED: "true"
+    networks:
+      - events
+
 networks:
   loms:
     driver: bridge
   bd:
     driver: bridge
+  metrics:
+      driver: bridge
+  events:
+    driver: bridge
 
 volumes:
   bd-disk-1:
+  prometheus_data:
+  grafana-data:
+  kafka-data:

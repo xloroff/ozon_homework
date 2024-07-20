@@ -159,7 +159,7 @@ func (s *Suite) TestCheckoutEmptyCart() {
 	// Тестируем попытку создать заказ с пустой корзиной.
 	_, httpCode, err := s.cart.Checkout(7)
 	require.NoError(s.T(), err, "Ошибка при попытке создать заказ по пустой корзине")
-	require.Equal(s.T(), http.StatusBadRequest, httpCode, "Код ответа от сервиса не совпадает (заказ по пустой корзине)")
+	require.Equal(s.T(), http.StatusPreconditionFailed, httpCode, "Код ответа от сервиса не совпадает (заказ по пустой корзине)")
 }
 
 func (s *Suite) TestNormalCkeckout() {

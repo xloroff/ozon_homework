@@ -4,7 +4,6 @@ LOCAL_BIN:=$(CURDIR)/bin
 # Путь до бинарей при локальном запуске protoc
 PROTOC = PATH="$$PATH:$(LOCAL_BIN)" protoc
 
-
 run:
 	go run ./cmd
 
@@ -22,6 +21,9 @@ build:
 
 lint:
 	golangci-lint run --config=./golangci.yaml
+
+pprof:
+	go tool pprof -http :9999 http://localhost:8082/debug/pprof/profile\?seconds=5
 
 cover:
 	@go test -vet=off ./... -coverprofile ../cover/cover_cart.out.tmp > /dev/null

@@ -18,20 +18,20 @@ import (
 
 // LomsService интерфейс для сервиса Loms.
 type LomsService interface {
-	AddOrder(userID int64, cart *model.Cart) (int64, error)
-	StockInfo(skuID int64) (uint16, error)
+	AddOrder(ctx context.Context, userID int64, cart *model.Cart) (int64, error)
+	StockInfo(ctx context.Context, skuID int64) (uint16, error)
 }
 
 // lomsClient структура клиента для сервиса loms.
 type lomsClient struct {
 	ctx    context.Context
-	logger logger.ILog
+	logger logger.Logger
 	order  order.OrderAPIClient
 	stock  stock.StockAPIClient
 }
 
 // NewClient создает нового клиента для сервиса LOMS.
-func NewClient(ctx context.Context, l logger.ILog, conn *grpc.ClientConn) LomsService {
+func NewClient(ctx context.Context, l logger.Logger, conn *grpc.ClientConn) LomsService {
 	return &lomsClient{
 		ctx:    ctx,
 		logger: l,
@@ -41,7 +41,7 @@ func NewClient(ctx context.Context, l logger.ILog, conn *grpc.ClientConn) LomsSe
 }
 
 // ClientDialler объявляет соединение для клиента сервиса LOMS.
-func ClientDialler(ctx context.Context, l logger.ILog, stngs *config.LomsServiceSettings) (*grpc.ClientConn, error) {
+func ClientDialler(ctx context.Context, l logger.Logger, stngs *config.LomsServiceSettings) (*grpc.ClientConn, error) {
 	u, err := url.Parse(stngs.ProductServiceHost + ":" + fmt.Sprintf("%d", stngs.ProductServicePort))
 	if err != nil {
 		l.Error(ctx, fmt.Sprintf("Ошибка форматирования url LOMS сервиса - %v", err))
@@ -54,7 +54,11 @@ func ClientDialler(ctx context.Context, l logger.ILog, stngs *config.LomsService
 	conn, err := grpc.NewClient(
 		u.String(),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(i.Logger()),
+		grpc.WithChainUnaryInterceptor(
+			i.Tracer(),
+			i.Metrics(u.String(), stngs.ProductServiceHost),
+			i.Logger(),
+		),
 	)
 	if err != nil {
 		l.Error(ctx, fmt.Sprintf("Ошибка регистрации коннекта с сервисом LOMS - %v", err))

@@ -1,24 +1,37 @@
 package orderservice
 
 import (
+	"context"
 	"fmt"
 
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/model"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/metrics"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/tracer"
 )
 
-func (s *oService) Create(user int64, items model.AllNeedReserve) (int64, error) {
-	orderID, err := s.orderStore.AddOrder(user, resevToOrders(items))
+func (s *oService) Create(ctx context.Context, user int64, items model.AllNeedReserve) (int64, error) {
+	ctx, span := tracer.StartSpanFromContext(ctx, "service.orderservice.create")
+	span.SetTag("component", "orderservice")
+
+	defer span.End()
+
+	orderID, err := s.orderStore.AddOrder(ctx, user, resevToOrders(items))
 	if err != nil {
-		s.logger.Debugf(s.ctx, "OrderService.Create: Ошибка создания заказа - %v", err)
+		span.SetTag("error", true)
+		metrics.UpdateOrdersCreatedError()
+		s.logger.Debugf(ctx, "OrderService.Create: Ошибка создания заказа - %v", err)
 
 		return 0, fmt.Errorf("Ошибка создания заказа - %w", err)
 	}
 
+	metrics.UpdateOrdersCreated()
+
 	reserved := false
 
-	rsrvdErr := s.stockStore.AddReserve(items)
+	rsrvdErr := s.stockStore.AddReserve(ctx, items)
 	if rsrvdErr != nil {
-		s.logger.Debugf(s.ctx, "OrderService.Create: Ошибка резервирования товара - %v", rsrvdErr)
+		span.SetTag("error", true)
+		s.logger.Debugf(ctx, "OrderService.Create: Ошибка резервирования товара - %v", rsrvdErr)
 	} else {
 		reserved = true
 	}
@@ -30,14 +43,18 @@ func (s *oService) Create(user int64, items model.AllNeedReserve) (int64, error)
 		status = model.OrderStatusFailed
 	}
 
-	err = s.orderStore.SetStatus(orderID, status)
+	err = s.orderStore.SetStatus(ctx, orderID, status)
 	if err != nil {
-		s.logger.Debugf(s.ctx, "OrderService.Create: Ошибка смены статуса заказа - %v", err)
+		span.SetTag("error", true)
+		s.logger.Debugf(ctx, "OrderService.Create: Ошибка смены статуса заказа - %v", err)
 
 		return 0, fmt.Errorf("Ошибка смены статуса заказа -  %w", err)
 	}
 
+	metrics.UpdateOrderStatusChanged(model.OrderStatusNew, status)
+
 	if !reserved {
+		span.SetTag("error", true)
 		return 0, fmt.Errorf("Ошибка резервирования товара - %w", rsrvdErr)
 	}
 

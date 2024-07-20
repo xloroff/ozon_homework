@@ -14,14 +14,14 @@ import (
 
 // API структура апи резервов.
 type API struct {
-	logger logger.ILog
+	logger logger.Logger
 	ctx    context.Context
 	stock.UnimplementedStockAPIServer
 	stockService stockservice.Service
 }
 
 // NewAPI создает новое API резервов.
-func NewAPI(ctx context.Context, l logger.ILog, stockService stockservice.Service) *API {
+func NewAPI(ctx context.Context, l logger.Logger, stockService stockservice.Service) *API {
 	return &API{
 		ctx:          ctx,
 		logger:       l,
