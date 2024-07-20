@@ -124,7 +124,7 @@ func TestCancelTable(t *testing.T) {
 
 				if tt.cancelReserveErr == nil {
 					fieldsForTableTest.orderStorageMock.SetStatusMock.
-						When(minimock.AnyContext, tt.orderID, model.OrderStatusCancelled).Then(tt.setStatusErr)
+						When(minimock.AnyContext, tt.orderID, tt.orderStore.User, model.OrderStatusCancelled).Then(tt.setStatusErr)
 				}
 			}
 

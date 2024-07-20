@@ -13,6 +13,10 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
 )
 
+/* Запускать миграции из приложения не лучший подход, который несет ряд проблем.
+В том числе проблем с разделением прав доступа к БД на миграцию и на обычную работу с базой.
+Изначально миграции осуществлялись отдельно, но желание "пощупать" нативную реализацию goose для GO - было важнее. */
+
 // MigrationPool осуществляет миграцию схемы БД.
 func MigrationPool(ctx context.Context, l logger.Logger, fldr, cnStr string) error {
 	db, err := goose.OpenDBWithDriver(config.Dialect, cnStr)

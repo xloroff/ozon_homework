@@ -56,6 +56,50 @@ func (ns NullOrderStatusType) Value() (driver.Value, error) {
 	return string(ns.OrderStatusType), nil
 }
 
+type OutboxStatusType string
+
+const (
+	OutboxStatusTypeNew    OutboxStatusType = "new"
+	OutboxStatusTypeSent   OutboxStatusType = "sent"
+	OutboxStatusTypeFailed OutboxStatusType = "failed"
+	OutboxStatusTypeLocked OutboxStatusType = "locked"
+)
+
+func (e *OutboxStatusType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = OutboxStatusType(s)
+	case string:
+		*e = OutboxStatusType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for OutboxStatusType: %T", src)
+	}
+	return nil
+}
+
+type NullOutboxStatusType struct {
+	OutboxStatusType OutboxStatusType
+	Valid            bool // Valid is true if OutboxStatusType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullOutboxStatusType) Scan(value interface{}) error {
+	if value == nil {
+		ns.OutboxStatusType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.OutboxStatusType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullOutboxStatusType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.OutboxStatusType), nil
+}
+
 type Order struct {
 	ID        int64
 	User      int64
@@ -69,6 +113,17 @@ type OrderItem struct {
 	OrderID int64
 	Sku     int64
 	Count   int32
+}
+
+type Outbox struct {
+	ID        string
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+	Status    OutboxStatusType
+	LockedTo  pgtype.Timestamp
+	EntityID  pgtype.Text
+	Payload   pgtype.Text
+	Metadata  []byte
 }
 
 type Stock struct {

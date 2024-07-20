@@ -1,0 +1,108 @@
+services:
+# Cервис для работы с корзиной пользователя Cart
+  cart:
+    volumes:
+      - cartapp:/cart
+      - appcover:/cover
+
+  # Cервис для работы с учетом заказов Loms
+  loms:
+    volumes:
+      - lomsapp:/loms
+      - appcover:/cover
+
+  # Cервис для запуска e2e тестов
+  e2e:
+    volumes:
+      - e2eapp:/e2e
+
+  # Cервис отправки уведомлений при смене статуса заказов Notifier
+  notifier:
+    volumes:
+      - notifierapp:/notifier
+
+  # Админка БД
+  adminer:
+    container_name: pgadmin-${STAGE}
+    image: dpage/pgadmin4:latest
+    build:
+      context: .
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+      PGPASSFILE: /pgpass
+    entrypoint: /bin/sh -c "chmod 0600 /pgpass; /entrypoint.sh;"
+    user: root
+    configs:
+      - source: servers.json
+        target: /pgadmin4/servers.json
+      - source: pgpass
+        target: /pgpass
+    ports:
+      - ${DB_ADMINER_FROMPORT}:${DB_ADMINER_TOPORT}
+    restart: unless-stopped
+    networks:
+      - bd
+
+  # Настройка подключения к базе в админке (чтобы не создавать руками)
+configs:
+  pgpass:
+    content: |
+      ${DB_NODE_1}:${BD_TOPORT}:*:${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}
+      ${DB_SYNC_1}:${BD_TOPORT}:*:${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}
+  servers.json:
+    content: |
+      {"Servers": {"1": {
+      "Group": "Servers",
+      "Name": "${DB_NODE_1}",
+      "Host": "${DB_NODE_1}",
+      "Port": ${BD_TOPORT},
+      "MaintenanceDB": "postgres",
+      "Username": "${POSTGRESQL_USERNAME}",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+      },
+      "2": {
+      "Group": "Servers",
+      "Name": "${DB_SYNC_1}",
+      "Host": "${DB_SYNC_1}",
+      "Port": ${BD_TOPORT},
+      "MaintenanceDB": "postgres",
+      "Username": "${POSTGRESQL_USERNAME}",
+      "PassFile": "/pgpass",
+      "SSLMode": "prefer"
+      }}}
+
+volumes:
+  appcover:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./cover"
+  cartapp:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./cart"
+  lomsapp:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./loms"
+  notifierapp:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./notifier"
+  e2eapp:
+    driver: local
+    driver_opts:
+      type: 'none'
+      o: 'bind'
+      device: "./e2e"

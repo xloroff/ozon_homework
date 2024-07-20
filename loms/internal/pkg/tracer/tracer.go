@@ -105,6 +105,35 @@ func (s *spanWrapper) SetTag(key string, value any) {
 	s.SetAttributes(attr)
 }
 
+// StartSpanFromIDs замещает trace_id и span_id взятыми извне в контексту и возвращает его.
+func StartSpanFromIDs(ctx context.Context, traceIDStr, spanIDStr, name string, opts ...otel_trace.SpanStartOption) (context.Context, Span, error) {
+	if traceIDStr != "" {
+		spanContext := otel_trace.SpanContextConfig{
+			TraceFlags: otel_trace.FlagsSampled,
+			Remote:     true,
+		}
+
+		traceID, err := otel_trace.TraceIDFromHex(traceIDStr)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Ошибка парсинга TraceID - %w", err)
+		}
+
+		spanID, err := otel_trace.SpanIDFromHex(spanIDStr)
+		if err != nil {
+			return nil, nil, fmt.Errorf("Ошибка парсинга SpanID - %w", err)
+		}
+
+		spanContext.TraceID = traceID
+		spanContext.SpanID = spanID
+
+		ctx = otel_trace.ContextWithSpanContext(ctx, otel_trace.NewSpanContext(spanContext))
+	}
+
+	ctx, span := StartSpanFromContext(ctx, name, opts...)
+
+	return ctx, span, nil
+}
+
 // Close закрывает трейсер.
 func Close() error {
 	var tracerProvider *sdk_trace.TracerProvider

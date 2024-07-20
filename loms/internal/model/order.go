@@ -5,7 +5,7 @@ type Order struct {
 	ID     int64
 	User   int64
 	Status string
-	Items  OrderItems
+	Items  OrderItems `json:",omitempty"`
 }
 
 // OrderItem отдельный итем в заказе.

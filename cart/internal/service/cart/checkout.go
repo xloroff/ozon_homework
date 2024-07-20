@@ -9,7 +9,7 @@ import (
 )
 
 // Checkout приобретение товаров через сервис LOMS.
-func (s *cService) Checkout(ctx context.Context, userID int64) (*model.OrderCart, error) {
+func (s *service) Checkout(ctx context.Context, userID int64) (*model.OrderCart, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.cart.checkout")
 	span.SetTag("component", "cart")
 	defer span.End()

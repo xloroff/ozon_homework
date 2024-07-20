@@ -12,11 +12,14 @@ import (
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/closer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/grpc_server"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/http_server"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/kafka_producer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/logger"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/pkg/tracer"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/order_store"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/outbox_store"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/repository/stock_store"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/service/order"
+	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/service/outbox"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/internal/service/stock"
 	"gitlab.ozon.dev/xloroff/ozon-hw-go/loms/pkg/db"
 )
@@ -42,7 +45,7 @@ func NewApp(ctx context.Context) Application {
 }
 
 // Run запуск.
-func (a *app) Run() error {
+func (a *app) Run() error { // nolint:revive // Тут запуски, никакой сложности для восприятия не несут.
 	cnfg, err := a.initializeConfig()
 	if err != nil {
 		return err
@@ -56,7 +59,7 @@ func (a *app) Run() error {
 	})
 	defer clsr.Wait()
 
-	err = a.initializeTracer(cnfg, clsr)
+	err = a.initializeTracer(cnfg.JaegerSettings, clsr)
 	if err != nil {
 		return err
 	}
@@ -66,12 +69,35 @@ func (a *app) Run() error {
 		return err
 	}
 
-	dbClient, err := a.initializeDBClients(cnfg, l, clsr)
+	pr, err := a.initializeOrderProducer(cnfg.KafkaSettings, l, clsr)
 	if err != nil {
 		return err
 	}
 
-	ordSrvc, stckSrvc, err := a.initializeServices(cnfg, l, dbClient, clsr)
+	dbClient, err := a.initializeDBClient(cnfg.BDConSettings, l, clsr)
+	if err != nil {
+		return err
+	}
+
+	outbStg, err := a.initializeOutboxStorage(cnfg.KafkaSettings, l, dbClient, clsr)
+	if err != nil {
+		return err
+	}
+
+	ordStg, err := a.initializeOrderStorage(l, dbClient, outbStg, clsr)
+	if err != nil {
+		return err
+	}
+
+	stoStrg, err := a.initializeStocktorage(l, dbClient, clsr)
+	if err != nil {
+		return err
+	}
+
+	ordSrvc := orderservice.NewService(a.ctx, l, ordStg, stoStrg)
+	stckSrvc := stockservice.NewService(a.ctx, l, stoStrg)
+
+	err = a.startOutboxSenderService(cnfg.KafkaSettings, pr, outbStg, l, clsr)
 	if err != nil {
 		return err
 	}
@@ -98,8 +124,8 @@ func (a *app) initializeConfig() (*config.ApplicationParameters, error) {
 	return cnfg, nil
 }
 
-func (a *app) initializeTracer(cnfg *config.ApplicationParameters, clsr closer.Closer) error {
-	err := tracer.InitTracerProvider(a.ctx, cnfg.JaegerSettings)
+func (a *app) initializeTracer(cnfg *config.JaegerSettings, clsr closer.Closer) error {
+	err := tracer.InitTracerProvider(a.ctx, cnfg)
 	if err != nil {
 		return fmt.Errorf("Ошибка создания провайдера трасировки - %w", err)
 	}
@@ -107,6 +133,22 @@ func (a *app) initializeTracer(cnfg *config.ApplicationParameters, clsr closer.C
 	clsr.Add(tracer.Close)
 
 	return nil
+}
+
+func (a *app) initializeOrderProducer(cnfg *config.KafkaSettings, l logger.Logger, clsr closer.Closer) (kafkaproducer.Producer, error) {
+	producer, err := kafkaproducer.NewProducer(cnfg.KafkaAddress, cnfg.OrderTopic, l,
+		kafkaproducer.WithIdempotent(),
+		kafkaproducer.WithMaxOpenRequests(cnfg.KafkaConnCount),
+		kafkaproducer.WithRetryMax(cnfg.KafkaRetryCount),
+		kafkaproducer.WithRetryBackoff(cnfg.KafkaBackoffTime),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("Ошибка создания продюсера в сервис Кафка - %w", err)
+	}
+
+	clsr.Add(producer.Close)
+
+	return producer, nil
 }
 
 func (a *app) runMigrations(cnfg *config.ApplicationParameters, l logger.Logger, clsr closer.Closer) error {
@@ -119,7 +161,7 @@ func (a *app) runMigrations(cnfg *config.ApplicationParameters, l logger.Logger,
 	return nil
 }
 
-func (a *app) initializeDBClients(cnfg *config.ApplicationParameters, _ logger.Logger, clsr closer.Closer) (db.ClientBD, error) {
+func (a *app) initializeDBClient(cnfg *config.BDConSettings, _ logger.Logger, clsr closer.Closer) (db.ClientBD, error) {
 	dbClient, err := db.NewClient(a.ctx, cnfg.BDMaster1ConString, cnfg.BDSync1ConString)
 	if err != nil {
 		clsr.CloseAll()
@@ -133,23 +175,34 @@ func (a *app) initializeDBClients(cnfg *config.ApplicationParameters, _ logger.L
 	return dbClient, nil
 }
 
-func (a *app) initializeServices(_ *config.ApplicationParameters, l logger.Logger, dbClient db.ClientBD, clsr closer.Closer) (ordSrvc orderservice.Service, stckSrvc stockservice.Service, err error) {
-	ordStrg, err := orderstore.NewOrderStorage(a.ctx, l, dbClient)
+func (a *app) initializeOutboxStorage(cnfg *config.KafkaSettings, l logger.Logger, dbClient db.ClientBD, clsr closer.Closer) (outbStg outboxstore.Storage, err error) {
+	outbStg, err = outboxstore.NewOutboxStorage(a.ctx, l, dbClient, cnfg.BlockTime)
 	if err != nil {
 		clsr.CloseAll()
-		return nil, nil, fmt.Errorf("Ошибка создания хранилища заказов - %w", err)
+		return nil, fmt.Errorf("Ошибка старта хранилища сообщений для отпарвки в брокер - %w", err)
 	}
 
-	resStg, err := stockstore.NewReserveStorage(a.ctx, l, dbClient)
+	return outbStg, nil
+}
+
+func (a *app) initializeOrderStorage(l logger.Logger, dbClient db.ClientBD, outbStg outboxstore.Storage, clsr closer.Closer) (ordStrg orderstore.Storage, err error) {
+	ordStrg, err = orderstore.NewOrderStorage(a.ctx, l, dbClient, outbStg)
 	if err != nil {
 		clsr.CloseAll()
-		return nil, nil, fmt.Errorf("Ошибка создания хранилища остатков - %w", err)
+		return nil, fmt.Errorf("Ошибка старта хранилища заказов - %w", err)
 	}
 
-	ordSrvc = orderservice.NewService(a.ctx, l, ordStrg, resStg)
-	stckSrvc = stockservice.NewService(a.ctx, l, resStg)
+	return ordStrg, nil
+}
 
-	return ordSrvc, stckSrvc, nil
+func (a *app) initializeStocktorage(l logger.Logger, dbClient db.ClientBD, clsr closer.Closer) (stoStrg stockstore.Storage, err error) {
+	stoStrg, err = stockstore.NewReserveStorage(a.ctx, l, dbClient)
+	if err != nil {
+		clsr.CloseAll()
+		return nil, fmt.Errorf("Ошибка создания хранилища остатков - %w", err)
+	}
+
+	return stoStrg, nil
 }
 
 func (a *app) startGRPCServer(cnfg *config.ApplicationParameters, l logger.Logger, ordSrvc orderservice.Service, stckSrvc stockservice.Service, clsr closer.Closer) error {
@@ -197,6 +250,17 @@ func (a *app) startHTTPServer(cnfg *config.ApplicationParameters, l logger.Logge
 
 	clsr.Add(func() error {
 		return servHTTP.Stop(cnfg.GracefulTimeout)
+	})
+
+	return nil
+}
+
+func (a *app) startOutboxSenderService(cnfg *config.KafkaSettings, pr kafkaproducer.Producer, outbStg outboxstore.Storage, l logger.Logger, clsr closer.Closer) error {
+	outboxService := outboxservice.NewService(a.ctx, l, cnfg.KafkaSenderPeriod, outbStg, pr)
+	outboxService.Start(a.ctx)
+
+	clsr.Add(func() error {
+		return outboxService.Stop()
 	})
 
 	return nil

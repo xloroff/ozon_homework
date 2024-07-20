@@ -18,7 +18,7 @@ type Closer interface {
 }
 
 type closer struct {
-	sync.Mutex
+	mu       sync.Mutex
 	logger   logger.Logger
 	once     sync.Once
 	done     chan struct{}
@@ -48,9 +48,9 @@ func NewCloser(l logger.Logger, sig ...os.Signal) Closer {
 
 // Add добавляет функцию в список завершающих функций.
 func (c *closer) Add(f ...func() error) {
-	c.Lock()
+	c.mu.Lock()
 	c.funcs = append(c.funcs, f...)
-	c.Unlock()
+	c.mu.Unlock()
 }
 
 // Wait подвешиваем ожидание, чтобы ничего не закрылось заранее.
@@ -72,10 +72,12 @@ func (c *closer) CloseAll() {
 
 		defer close(c.done)
 
-		c.Lock()
-		defer c.Unlock()
+		c.mu.Lock()
+		funcs := make([]func() error, len(c.funcs))
+		copy(funcs, c.funcs)
+		c.mu.Unlock()
 
-		for i := len(c.funcs) - 1; i >= 0; i-- {
+		for i := len(funcs) - 1; i >= 0; i-- {
 			err := c.funcs[i]()
 			if err != nil {
 				c.logger.Errorf(ctx, "Ошибка правильного завершения функции - %v", err)

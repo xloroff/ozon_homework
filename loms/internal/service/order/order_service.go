@@ -17,7 +17,7 @@ type Service interface {
 	Pay(ctx context.Context, orderID int64) error
 }
 
-type oService struct {
+type service struct {
 	ctx        context.Context
 	orderStore orderstore.Storage
 	stockStore stockstore.Storage
@@ -26,7 +26,7 @@ type oService struct {
 
 // NewService создает новый сервис LOMS с хранилищами резервов и хранилищем заказов.
 func NewService(ctx context.Context, l logger.Logger, os orderstore.Storage, ss stockstore.Storage) Service {
-	return &oService{
+	return &service{
 		ctx:        ctx,
 		orderStore: os,
 		stockStore: ss,

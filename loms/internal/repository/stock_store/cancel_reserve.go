@@ -88,7 +88,7 @@ func (ms *reserveStorage) cancelItem(ctx context.Context, q *sqlc.Queries, item 
 		return err
 	}
 
-	return ms.cReserve(ctx, q, item)
+	return ms.cancel(ctx, q, item)
 }
 
 func (ms *reserveStorage) validateStock(item *model.NeedReserve, stock sqlc.Stock) error {
@@ -103,8 +103,8 @@ func (ms *reserveStorage) validateStock(item *model.NeedReserve, stock sqlc.Stoc
 	return nil
 }
 
-func (ms *reserveStorage) cReserve(ctx context.Context, q *sqlc.Queries, item *model.NeedReserve) error {
-	ctx, span := tracer.StartSpanFromContext(ctx, "repository.stockstore.c_reserve")
+func (ms *reserveStorage) cancel(ctx context.Context, q *sqlc.Queries, item *model.NeedReserve) error {
+	ctx, span := tracer.StartSpanFromContext(ctx, "repository.stockstore.cancel")
 	span.SetTag("component", "stockstore")
 	span.SetTag("span.kind", "child")
 

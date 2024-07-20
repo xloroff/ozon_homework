@@ -15,7 +15,7 @@ import (
 )
 
 // GetAllUserItems получение корзины пользователя через сервис, вызов клиента для связи с сервисом продуктов и обращение к сервису хранения.
-func (s *cService) GetAllUserItems(ctx context.Context, userID int64) (*model.FullUserCart, error) {
+func (s *service) GetAllUserItems(ctx context.Context, userID int64) (*model.FullUserCart, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "get_all_user_items")
 	span.SetTag("component", "cart")
 
@@ -44,7 +44,7 @@ func (s *cService) GetAllUserItems(ctx context.Context, userID int64) (*model.Fu
 }
 
 // fullCartReciver идет в сервис продуктов по каждой позиции и формирует результирующую корзину.
-func (s *cService) fullCartReciver(ctx context.Context, cart *model.Cart) (*model.FullUserCart, error) {
+func (s *service) fullCartReciver(ctx context.Context, cart *model.Cart) (*model.FullUserCart, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.cart.full_cart_reciver")
 	span.SetTag("component", "cart")
 	span.SetTag("span.kind", "child")
@@ -66,7 +66,7 @@ func (s *cService) fullCartReciver(ctx context.Context, cart *model.Cart) (*mode
 		erg.Go(func() error {
 			if err := limiter.Wait(ctx); err != nil {
 				span.SetTag("error", true)
-				return fmt.Errorf("Ошибка ожидания при страбатывании лимита RPS %v - %w", config.RPS, err)
+				return fmt.Errorf("Ошибка ожидания при срабатывании лимита RPS %v - %w", config.RPS, err)
 			}
 
 			getProduct, err := s.productCli.GetProduct(ctx, skuID)

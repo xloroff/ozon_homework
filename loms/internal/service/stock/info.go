@@ -8,7 +8,7 @@ import (
 )
 
 // Info возвращает доступное число остатков товара за вычетом зарезервированного.
-func (s *sService) Info(ctx context.Context, sku int64) (uint16, error) {
+func (s *service) Info(ctx context.Context, sku int64) (uint16, error) {
 	ctx, span := tracer.StartSpanFromContext(ctx, "service.stockservice.info")
 	span.SetTag("component", "stockservice")
 	defer span.End()

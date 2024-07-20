@@ -35,6 +35,7 @@ services:
       - APP_CONFIG_NAME
       - JAEGER_HOST
       - JAEGER_PORT
+      - TOPIC_NAME
     depends_on:
       loms:
         condition: service_healthy
@@ -73,6 +74,9 @@ services:
       - JAEGER_PORT
       - DB_NODE_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_NODE_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
       - DB_SYNC_1_CON=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${DB_SYNC_1}:${BD_TOPORT}/${BD_NAME1}?sslmode=disable
+      - TOPIC_NAME
+      - KAFKA_PORT=${KAFKAPLAINTEXT_TOPORT}
+      - KAFKA_HOST
     healthcheck:
       test:
         [
@@ -82,12 +86,14 @@ services:
       interval: 3s
       timeout: 5s
       retries: 100
-      start_period: 5m
+      start_period: 10m
     depends_on:
       bd-master-1:
         condition: service_healthy
       bd-sync-1:
         condition: service_healthy
+      init-kafka:
+        condition: service_completed_successfully
     ports:
       - ${LOMSAPP_FROMPORT}:${LOMSAPP_TOPORT}
       - ${LOMSHTTP_TOPORT}:${LOMSHTTP_TOPORT}
@@ -95,6 +101,33 @@ services:
     networks:
       - loms
       - bd
+      - events
+
+  # Cервис отправки уведомлений при смене статуса заказов Notifier
+  notifier:
+    image: appnotifier-${STAGE}
+    platform: linux/amd64
+    deploy:
+      replicas: ${NOTIFIER_COUNT}
+    build:
+      context: .
+      target: ${STAGE}
+      dockerfile: notifier/Dockerfile
+    environment:
+      - APP_CONFIG_NAME
+      - JAEGER_HOST
+      - JAEGER_PORT
+      - TOPIC_NAME
+      - KAFKA_PORT=${KAFKAPLAINTEXT_TOPORT}
+      - KAFKA_HOST
+      - PUSHGATEWAY_APP_NAME
+      - PUSHGATEWAY_TOPORT
+      - CONSUMER_GROUP_NAME
+    depends_on:
+      init-kafka:
+        condition: service_completed_successfully
+    restart: always
+    networks:
       - events
 
   bd-master-1:
@@ -194,7 +227,6 @@ services:
       start_period: 10m
     networks:
       - loms
-      - metrics
 
 # Визуализация метрик
   grafana:
@@ -237,6 +269,8 @@ services:
       start_period: 10m
     networks:
       - loms
+      - metrics
+      - events
 
 # Конфигурация Kafka
   kafka:
@@ -246,21 +280,20 @@ services:
     ports:
       - ${KAFKA_FROMPORT}:${KAFKA_TOPORT}
     environment:
-      - KAFKA_CFG_NODE_ID=1
+      - KAFKA_CFG_NODE_ID=1 #
       - KAFKA_KRAFT_CLUSTER_ID=PVjHlx7ESeesq55jeB6Efw
       - KAFKA_CFG_PROCESS_ROLES=controller,broker
-      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9091
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9090,CONTROLLER://:9091,PLAINTEXT_HOST://:${KAFKA_TOPORT}
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOST}:29092,PLAINTEXT_HOST://${KAFKA_HOST}:${KAFKA_TOPORT}:${KAFKA_TOPORT}
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=1@kafka:9094
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:${KAFKAPLAINTEXT_TOPORT},CONTROLLER://:9094,PLAINTEXT_HOST://:${KAFKA_TOPORT}
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://${KAFKA_HOST}:${KAFKAPLAINTEXT_TOPORT},PLAINTEXT_HOST://${KAFKA_HOST}:${KAFKA_TOPORT}
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-      - KAFKA_CFG_INTER_BROKER_LISTENER_NAME=PLAINTEXT
       - KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1
       - KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1
       - KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1
       - KAFKA_ADVERTISED_HOST_NAME=${KAFKA_HOST}
     healthcheck:
-      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server=localhost:${KAFKA_TOPORT}", "--list" ]
+      test: [ "CMD", "kafka-topics.sh", "--bootstrap-server=${KAFKA_HOST}:${KAFKAPLAINTEXT_TOPORT}", "--list" ]
       interval: 3s
       timeout: 5s
       retries: 300
@@ -279,7 +312,7 @@ services:
       kafka:
         condition: service_healthy
     command: |
-      kafka-topics.sh --create --if-not-exists --topic loms.order-events --replication-factor=1 --partitions=2 --bootstrap-server ${KAFKA_HOST}:${KAFKA_TOPORT}
+      kafka-topics.sh --create --if-not-exists --topic ${TOPIC_NAME} --replication-factor=1 --partitions=2 --bootstrap-server ${KAFKA_HOST}:${KAFKA_TOPORT}
     networks:
       - events
 
@@ -296,8 +329,9 @@ services:
         condition: service_healthy
     environment:
       KAFKA_CLUSTERS_0_NAME: ozon_hw
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_HOST}:${KAFKA_TOPORT}
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${KAFKA_HOST}:${KAFKAPLAINTEXT_TOPORT}
       DYNAMIC_CONFIG_ENABLED: "true"
+    restart: unless-stopped
     networks:
       - events
 
@@ -307,9 +341,14 @@ networks:
   bd:
     driver: bridge
   metrics:
-      driver: bridge
+    driver: bridge
   events:
     driver: bridge
+ # Фикс ошибки закончившихся IP для сетки из-за ограничения настроек сети рунера при запуске пайплайна CI/CD Gitlab Ozon
+  #  ipam:
+  #    driver: default
+  #    config:
+  #      - subnet: 172.28.0.0/16
 
 volumes:
   bd-disk-1:

@@ -8,7 +8,7 @@ run-all-dev:
 	docker-compose --env-file .env --env-file .env.dev up --force-recreate
 
 run-e2e:
-	docker-compose up -d e2e
+	NOTIFIER_COUNT=1 docker-compose up -d e2e
 
 run-e2e-dev:
 	docker-compose --env-file .env --env-file .env.dev up -d e2e

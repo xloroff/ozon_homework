@@ -14,3 +14,6 @@ const HTTPCalmStatus = 420
 
 // AppName имя приложения.
 const AppName = "loms"
+
+// RPS количество одновременных реквестов в сторонний сервис.
+const RPS = 10

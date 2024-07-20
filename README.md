@@ -10,10 +10,5 @@
 
 Найти его можно [тут](./cart/examples/Cart.postman_collection.json)
 
-## Решение проблем
-
-Убедитесь, что у Docker есть доступ к папке log для создания файлов
-
-
 - [Домашние задания](./docs)
 - [Страница курса на confluence](https://confluence.o3.ru/display/R256/Go-12)
